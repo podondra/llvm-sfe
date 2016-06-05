@@ -93,9 +93,13 @@ IDENTIFIER [[:alpha:]][[:alnum:]]*
 
 ")" printf("A right round bracket: %s\n", YYText());
 
-[[:digit:]]+ {
-    printf("An integer: %s (%d)\n", YYText(), atoi(YYText()));
+([[:digit:]]{-}[0])[[:digit:]]* {
+    printf("A decimal integer: %s\n", YYText());
 }
+
+"$"[[:xdigit:]]+ printf("A hexadecimal integer: %s\n", YYText());
+
+"&"[0-7]+ printf("A octal integer: %s\n", YYText());
 
 {IDENTIFIER} printf("An identifier: %s\n", YYText());
 
