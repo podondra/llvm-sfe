@@ -16,34 +16,88 @@
      */
 %option align
     /*
-     * specifies that the full scanner tables should be generated - flex
-     * should not compress the tables by taking advantages of similar
-     * transition functions for different states
+     * specifies that the full scanner tables should be generated -
+     * flex should not compress the tables by taking advantages of
+     * similar transition functions for different states
      */
 %option full
-    /* generate an 8-bit scanner, one which can recognize 8-bit characters */
+    /*
+     * generate an 8-bit scanner, one which can recognize 8-bit
+     * characters
+     */
 %option 8bit
     /* warn about certain things */
 %option warn
 
-DIGIT [0-9]
-ID    [a-zA-Z][a-zA-Z0-9]*
+IDENTIFIER [[:alpha:]][[:alnum:]]*
 
 %%
 
-{DIGIT}+ {
+"array" printf("A keyword array: %s\n", YYText());
+
+"begin" printf("A keyword begin: %s\n", YYText());
+
+"const" printf("A keyword const: %s\n", YYText());
+
+"do" printf("A keyword do: %s\n", YYText());
+
+"end" printf("A keyword end: %s\n", YYText());
+
+"for" printf("A keyword for: %s\n", YYText());
+
+"if" printf("A keyword if: %s\n", YYText());
+
+"integer" printf("A keyword integer: %s\n", YYText());
+
+"of" printf("A keyword of: %s\n", YYText());
+
+"program" printf("A keyword program: %s\n", YYText());
+
+"readln" printf("A keyword readln: %s\n", YYText());
+
+"then" printf("A keyword then: %s\n", YYText());
+
+"to" printf("A keyword to: %s\n", YYText());
+
+"var" printf("A keyword var: %s\n", YYText());
+
+"write" printf("A keyword write: %s\n", YYText());
+
+"writeln" printf("A keyword writeln: %s\n", YYText());
+
+"+" printf("An operator plus: %s\n", YYText());
+
+"-" printf("An operator minus: %s\n", YYText());
+
+"*" printf("An operator multiplication: %s\n", YYText());
+
+"/" printf("An operator division: %s\n", YYText());
+
+"mod" printf("An operator: %s\n", YYText());
+
+":=" printf("An assignment: %s\n", YYText());
+
+"=" printf("An equals sign: %s\n", YYText());
+
+";" printf("A semicolon: %s\n", YYText());
+
+":" printf("A colon: %s\n", YYText());
+
+"." printf("A period: %s\n", YYText());
+
+"[" printf("A left bracket: %s\n", YYText());
+
+"]" printf("A right bracket: %s\n", YYText());
+
+"(" printf("A left round bracket: %s\n", YYText());
+
+")" printf("A right round bracket: %s\n", YYText());
+
+[[:digit:]]+ {
     printf("An integer: %s (%d)\n", YYText(), atoi(YYText()));
 }
 
-if|then|begin|end|procedure|function {
-    printf("A keyword: %s\n", YYText());
-}
-
-{ID} printf("An identifier: %s\n", YYText());
-
-"+"|"-"|"*"|"/" {
-    printf("An operator: %s\n", YYText());
-}
+{IDENTIFIER} printf("An identifier: %s\n", YYText());
 
     /* eat up whitespace */
 [ \t\n]+
