@@ -1,6 +1,42 @@
 %{
-#include <cstdlib>
 #include <cstdio>
+
+enum lexical_symbols {
+    KW_ARRAY,
+    KW_BEGIN,
+    KW_CONST,
+    KW_DO,
+    KW_END,
+    KW_FOR,
+    KW_IF,
+    KW_INTEGER,
+    KW_OF,
+    KW_PROGRAM,
+    KW_READLN,
+    KW_THEN,
+    KW_TO,
+    KW_VAR,
+    KW_WRITE,
+    KW_WRITELN,
+    PLUS,
+    MINUS,
+    MULTIPLICATION,
+    DIVISION,
+    MODULO,
+    ASSIGNMENT,
+    EQUALS_SIGN,
+    SEMICOLON,
+    COLON,
+    PERIOD,
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    LEFT_ROUND_BRACKET,
+    RIGHT_ROUND_BRACKET,
+    DECIMAL,
+    HEXADECIMAL,
+    OCTAL,
+    IDENTIFIER
+};
 %}
 
     /* generate c++ */
@@ -33,78 +69,75 @@ IDENTIFIER [[:alpha:]][[:alnum:]]*
 
 %%
 
-"array" printf("A keyword array: %s\n", YYText());
+"array" return KW_ARRAY;
 
-"begin" printf("A keyword begin: %s\n", YYText());
+"begin" return KW_BEGIN;
 
-"const" printf("A keyword const: %s\n", YYText());
+"const" return KW_CONST;
 
-"do" printf("A keyword do: %s\n", YYText());
+"do" return KW_DO;
 
-"end" printf("A keyword end: %s\n", YYText());
+"end" return KW_END;
 
-"for" printf("A keyword for: %s\n", YYText());
+"for" return KW_FOR;
 
-"if" printf("A keyword if: %s\n", YYText());
+"if" return KW_IF;
 
-"integer" printf("A keyword integer: %s\n", YYText());
+"integer" return KW_INTEGER;
 
-"of" printf("A keyword of: %s\n", YYText());
+"of" return KW_OF;
 
-"program" printf("A keyword program: %s\n", YYText());
+"program" return KW_PROGRAM;
 
-"readln" printf("A keyword readln: %s\n", YYText());
+"readln" return KW_READLN;
 
-"then" printf("A keyword then: %s\n", YYText());
+"then" return KW_THEN;
 
-"to" printf("A keyword to: %s\n", YYText());
+"to" return KW_TO;
 
-"var" printf("A keyword var: %s\n", YYText());
+"var" return KW_VAR;
 
-"write" printf("A keyword write: %s\n", YYText());
+"write" return KW_WRITE;
 
-"writeln" printf("A keyword writeln: %s\n", YYText());
+"writeln" return KW_WRITELN;
 
-"+" printf("An operator plus: %s\n", YYText());
+"+" return PLUS;
 
-"-" printf("An operator minus: %s\n", YYText());
+"-" return MINUS;
 
-"*" printf("An operator multiplication: %s\n", YYText());
+"*" return MULTIPLICATION;
 
-"/" printf("An operator division: %s\n", YYText());
+"/" return DIVISION;
 
-"mod" printf("An operator: %s\n", YYText());
+"mod" return MODULO;
 
-":=" printf("An assignment: %s\n", YYText());
+":=" return ASSIGNMENT;
 
-"=" printf("An equals sign: %s\n", YYText());
+"=" return EQUALS_SIGN;
 
-";" printf("A semicolon: %s\n", YYText());
+";" return SEMICOLON;
 
-":" printf("A colon: %s\n", YYText());
+":" return COLON;
 
-"." printf("A period: %s\n", YYText());
+"." return PERIOD;
 
-"[" printf("A left bracket: %s\n", YYText());
+"[" return LEFT_BRACKET;
 
-"]" printf("A right bracket: %s\n", YYText());
+"]" return RIGHT_BRACKET;
 
-"(" printf("A left round bracket: %s\n", YYText());
+"(" return LEFT_ROUND_BRACKET;
 
-")" printf("A right round bracket: %s\n", YYText());
+")" return RIGHT_ROUND_BRACKET;
 
-([[:digit:]]{-}[0])[[:digit:]]* {
-    printf("A decimal integer: %s\n", YYText());
-}
+([[:digit:]]{-}[0])[[:digit:]]* return DECIMAL;
 
-"$"[[:xdigit:]]+ printf("A hexadecimal integer: %s\n", YYText());
+"$"[[:xdigit:]]+ return HEXADECIMAL;
 
-"&"[0-7]+ printf("A octal integer: %s\n", YYText());
+"&"[0-7]+ return OCTAL;
 
-{IDENTIFIER} printf("An identifier: %s\n", YYText());
+{IDENTIFIER} return IDENTIFIER;
 
-    /* eat up whitespace */
-[ \t\n]+
+[ \t\n]+ /* eat up whitespace */
 
 . printf("Unrecognized character: %s\n", YYText());
 
