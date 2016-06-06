@@ -1,42 +1,6 @@
 %{
 #include <cstdio>
-
-enum lexical_symbols {
-    KW_ARRAY,
-    KW_BEGIN,
-    KW_CONST,
-    KW_DO,
-    KW_END,
-    KW_FOR,
-    KW_IF,
-    KW_INTEGER,
-    KW_OF,
-    KW_PROGRAM,
-    KW_READLN,
-    KW_THEN,
-    KW_TO,
-    KW_VAR,
-    KW_WRITE,
-    KW_WRITELN,
-    PLUS,
-    MINUS,
-    MULTIPLICATION,
-    DIVISION,
-    MODULO,
-    ASSIGNMENT,
-    EQUALS_SIGN,
-    SEMICOLON,
-    COLON,
-    PERIOD,
-    LEFT_BRACKET,
-    RIGHT_BRACKET,
-    LEFT_ROUND_BRACKET,
-    RIGHT_ROUND_BRACKET,
-    DECIMAL,
-    HEXADECIMAL,
-    OCTAL,
-    IDENTIFIER
-};
+#include "lexer.h"
 %}
 
     /* generate c++ */
@@ -44,7 +8,7 @@ enum lexical_symbols {
     /* do not generate yywrap function */
 %option noyywrap
     /* specify filenames */
-%option outfile="scanner.cc" header-file="scanner.h"
+%option outfile="lexer.cc"
     /*
      * instructs flex to trade off larger tables in the generated scanner for
      * faster performance because the elements of the tables are better
@@ -141,10 +105,4 @@ IDENTIFIER [[:alpha:]][[:alnum:]]*
 
 . printf("Unrecognized character: %s\n", YYText());
 
-%%
-
-int main(int argc, char** argv) {
-    FlexLexer *lexer = new yyFlexLexer();
-    while (lexer->yylex() != 0) {}
-    return 0;
-}
+<<EOF>> return EOI;
