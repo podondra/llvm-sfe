@@ -3,32 +3,6 @@
 #include "lexer.h"
 %}
 
-    /* generate c++ */
-%option c++
-    /* do not generate yywrap function */
-%option noyywrap
-    /* specify filenames */
-%option outfile="lexer.cc"
-    /*
-     * instructs flex to trade off larger tables in the generated scanner for
-     * faster performance because the elements of the tables are better
-     * aligned for memory access and computation
-     */
-%option align
-    /*
-     * specifies that the full scanner tables should be generated -
-     * flex should not compress the tables by taking advantages of
-     * similar transition functions for different states
-     */
-%option full
-    /*
-     * generate an 8-bit scanner, one which can recognize 8-bit
-     * characters
-     */
-%option 8bit
-    /* warn about certain things */
-%option warn
-
 IDENTIFIER [[:alpha:]][[:alnum:]]*
 
 %%
