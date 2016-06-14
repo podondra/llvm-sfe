@@ -1,0 +1,12 @@
+expr ::= <term> <expr'>
+expr ::= "-" <term> <expr'>
+expr' ::= "+" <term> <expr'>
+expr' ::= "-" <term> <expr'>
+expr' ::= ""
+term ::= <factor> <term'>
+term' ::= "*" <factor> <term'>
+term' ::= "/" <factor> <term'>
+term' ::= "mod" <factor> <term'>
+term' ::= ""
+factor ::= <ident>
+factor ::= "(" <expr> ")"
