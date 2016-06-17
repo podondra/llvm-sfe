@@ -1,0 +1,162 @@
+program ::= 'program' 'ident' ';' <block> '.'
+
+block ::= <const_def_part> <var_decl_part> <proc_and_func_decl_part>
+      <comp_stmt>
+
+const_def_part ::= 'const' <const_list>
+               | ''
+
+const_list ::= <const_def> <const_list_0>
+
+const_list_0 ::= <const_def> <const_list_0>
+             | ''
+
+const_def ::= 'ident' '=' <const> ';'
+
+const ::= <sign> 'number'
+
+var_decl_part ::= <var_decl_section> ';'
+              | ''
+
+var_decl_section ::= 'var' <var_decl_list> <var_decl_section_0>
+
+var_decl_section_0 ::= ';' 'var' <var_decl_list> <var_decl_section_0>
+                   | ''
+
+var_decl_list ::= <var_decl> <var_decl_list_0>
+
+var_decl_list_0 ::= ';' <var_decl> <var_decl_list_0>
+                | ''
+
+var_decl ::= <ident_list> ':' <type>
+
+ident_list ::= 'ident' <ident_list_0>
+
+ident_list_0 ::= ',' 'ident' <ident_list_0>
+             | ''
+
+type ::= 'integer'
+     | 'array' '[' 'number' '..' 'number' ']' 'of' 'integer'
+
+proc_and_func_decl_part ::= <proc_or_func_decl_list> ';'
+                        | ''
+
+proc_or_func_decl_list ::= <proc_or_func_decl>
+                       <proc_or_func_decl_list_0>
+
+proc_or_func_decl_list_0 ::= ';' <proc_or_func_decl>
+                         <proc_or_func_decl_list_0>
+                         | ''
+
+proc_or_func_decl ::= <proc_decl>
+                  | <func_decl>
+
+proc_decl ::= <proc_heading> ';' 'forward'
+          | <proc_heading> ';' <block>
+
+proc_heading ::= <proc_ident>
+             | <proc_ident> <formal_param_list>
+
+proc_ident ::= 'proc' 'ident'
+
+func_decl ::= <func_heading> ';' 'forward'
+          | <func_heading> ';' <block>
+
+func_heading ::= 'func' 'ident' ':' 'integer'
+             | 'func' 'ident' <formal_param_list> ':' 'integer'
+
+formal_param_list ::= '(' <formal_param_section_list> ')'
+
+formal_param_section_list ::= <formal_param_section_list> ';'
+                          <formal_param_section>
+                          | <formal_param_section>
+
+formal_param_section ::= <ident_list> ':' <type>
+
+comp_stmt ::= 'begin' <stmt_seq> 'end'
+
+stmt_seq ::= <stmt> <stmt_seq_0>
+
+stmt_seq_0 ::= ';' <stmt> <stmt_seq_0>
+           | ''
+
+stmt ::= <assign_stmt>
+     | <comp_stmt>
+     | <if_stmt>
+     | <while_stmt>
+     | <for_stmt>
+     | 'exit'
+     | 'readln' '(' <var_access> ')'
+     | 'writeln' '(' <expr> ')'
+     | 'write' '(' <expr> ')'
+     | ''
+
+assign_stmt ::= <var_access> ':=' <expr>
+
+while_stmt ::= 'while' <expr> 'do' <stmt>
+
+for_stmt ::= 'for' 'ident' ':=' <expr> <dir> <expr> 'do' <stmt>
+
+dir ::= 'to'
+    | 'downto'
+
+expr ::= <simple_expr>
+     | <simple_expr> <relop> <simple_expr>
+
+simple_expr ::= <term> <simple_expr_0>
+
+simple_expr_0 ::= <addop> <term> <simple_expr_0>
+              | ''
+
+term ::= <factor> <term_0>
+
+term_0 ::= <mulop> <factor> <term_0>
+       | ''
+
+sign ::= '+'
+     | '-'
+
+addop ::= '+'
+      | '-'
+
+mulop ::= '*'
+      | 'div'
+      | 'mod'
+
+relop ::= '='
+      | '<>'
+      | '<'
+      | '>'
+      | '<='
+      | '>='
+
+factor ::= <sign> <factor>
+       | <exp>
+
+exp ::= <primary>
+    | <primary> '**' <exp>
+
+primary ::= <var_access>
+        | 'number'
+        | <func_call>
+        | '(' <expr> ')'
+        | 'not' <primary>
+
+func_call ::= 'ident' <params>
+
+var_access ::= 'ident' <var_access_0>
+
+var_access_0 ::= '[' <expr> ']' <var_access_0>
+             | ''
+
+params ::= '(' <actual_param_list> ')'
+
+actual_param_list ::= <expr> <actual_param_list_0>
+
+actual_param_list_0 ::= ',' <expr> <actual_param_list_0>
+                    | ''
+
+if_stmt ::= 'if' <expr> 'then' <stmt> <else_stmt>
+
+else_stmt ::= 'else' <stmt>
+          | ''
