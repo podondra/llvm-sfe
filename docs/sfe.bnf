@@ -74,6 +74,7 @@ stmt ::= <assign_stmt>
      | <if_stmt>
      | <while_stmt>
      | <for_stmt>
+     | 'exit'
      | 'readln' '(' <var_access> ')'
      | 'writeln' '(' <expr> ')'
      | 'write' '(' <expr> ')'
@@ -83,7 +84,7 @@ assign_stmt ::= <var_access> ':=' <expr>
 
 while_stmt ::= 'while' <expr> 'do' <stmt>
 
-for_stmt ::= 'for' 'ident' ':=' <expr> <dir> <expr> 'do' <comp_stmt>
+for_stmt ::= 'for' 'ident' ':=' <expr> <dir> <expr> 'do' <stmt>
 
 dir ::= 'to'
     | 'downto'
