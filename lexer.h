@@ -1,3 +1,8 @@
+#ifndef lexer_h_k28xi1odj37cu2jg
+#define lexer_h_k28xi1odj37cu2jg
+
+extern long int yynumbval;
+
 enum lexical_symbols {
     LEX_ARRAY,
     LEX_BEGIN,
@@ -51,3 +56,5 @@ enum lexical_symbols {
     LEX_SEMICOLON,
     LEX_EOI
 };
+
+#endif /* lexer_h_k28xi1odj37cu2jg */

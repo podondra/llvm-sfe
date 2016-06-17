@@ -1,6 +1,9 @@
 %{
 #include <cstdio>
+#include <cstdlib>
 #include "lexer.h"
+
+long int yynumbval;
 %}
 
 IDENTIFIER  [[:alpha:]_][[:alnum:]_]*
@@ -59,7 +62,15 @@ OCTAL       "&"[0-7]+
 ")"         return LEX_RRBRAC;
 ";"         return LEX_SEMICOLON;
 
-({DECIMAL}|{HEXADECIMAL}|{OCTAL}) return LEX_NUMB;
+({DECIMAL}|{HEXADECIMAL}|{OCTAL}) {
+    if (YYText()[0] == '$')
+        yynumbval = std::strtoul(YYText() + 1, nullptr, 16);
+    else if (YYText()[0] == '&')
+        yynumbval = std::strtoul(YYText() + 1, nullptr, 8);
+    else
+        yynumbval = std::strtoul(YYText(), nullptr, 10);
+    return LEX_NUMB;
+}
 
 {IDENTIFIER} return LEX_IDENT;
 

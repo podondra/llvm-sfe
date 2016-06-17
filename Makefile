@@ -1,5 +1,6 @@
 LD = clang++
 CXX = clang++
+CXXFLAGS = -std=c++11 -pedantic-errors -Wall
 FLEX = flex++
 FLEXFLAGS= -Cfa --8bit --noyywrap --warn
 

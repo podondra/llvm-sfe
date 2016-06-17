@@ -1,13 +1,18 @@
 #include <cstdio>
 #include <FlexLexer.h>
-#include "lexer.h" 
+#include "lexer.h"
 
 int main() {
-    FlexLexer *lexer = new yyFlexLexer();
-    int lexical_symbol;
-    while ((lexical_symbol = lexer->yylex()) != LEX_EOI)
-        printf("lexical symbol: %s (%d)\n",
-                lexer->YYText(),
-                lexical_symbol);
+    auto lexer = yyFlexLexer{};
+    auto lex_symbol = 0;
+    while ((lex_symbol = lexer.yylex()) != LEX_EOI)
+        if (lex_symbol == LEX_NUMB)
+            printf("number: %s (%ld)\n",
+                    lexer.YYText(),
+                    yynumbval);
+        else
+            printf("lexical symbol: %s (%d)\n",
+                    lexer.YYText(),
+                    lex_symbol);
     return 0;
 }
