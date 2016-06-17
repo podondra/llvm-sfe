@@ -3,80 +3,67 @@
 #include "lexer.h"
 %}
 
-IDENTIFIER [[:alpha:]][[:alnum:]]*
+IDENTIFIER  [[:alpha:]_][[:alnum:]_]*
+DECIMAL     (([[:digit:]]{-}[0])[[:digit:]]*|"0")
+HEXADECIMAL "$"[[:xdigit:]]+
+OCTAL       "&"[0-7]+
 
 %%
 
-"array" return KW_ARRAY;
+"array"     return LEX_ARRAY;
+"begin"     return LEX_BEGIN;
+"const"     return LEX_CONST;
+"do"        return LEX_DO;
+"downto"    return LEX_DO;
+"else"      return LEX_ELSE;
+"end"       return LEX_END;
+"exit"      return LEX_EXIT;
+"for"       return LEX_FOR;
+"forward"   return LEX_FORW;
+"funciton"  return LEX_FORW;
+"if"        return LEX_IF;
+"integer"   return LEX_INT;
+"of"        return LEX_OF;
+"procedure" return LEX_PROC;
+"program"   return LEX_PROGRAM;
+"readln"    return LEX_READLN;
+"then"      return LEX_THEN;
+"to"        return LEX_TO;
+"var"       return LEX_VAR;
+"while"     return LEX_WHILE;
+"write"     return LEX_WRITE;
+"writeln"   return LEX_WRITELN;
+"/"         return LEX_DIV;
+"**"        return LEX_EXP;
+"-"         return LEX_MINUS;
+"mod"       return LEX_MOD;
+"*"         return LEX_MUL;
+"+"         return LEX_PLUS;
+":="        return LEX_ASSIGN;
+"="         return LEX_EQ;
+"<>"        return LEX_NE;
+"<"         return LEX_LT;
+">"         return LEX_GT;
+"<="        return LEX_LE;
+">="        return LEX_GE;
+"and"       return LEX_AND;
+"not"       return LEX_NOT;
+"or"        return LEX_OR;
+":"         return LEX_COLON;
+","         return LEX_COMMA;
+"."         return LEX_DOT;
+".."        return LEX_DOTDOT;
+"["         return LEX_LBRAC;
+"]"         return LEX_RBRAC;
+"("         return LEX_LRBRAC;
+")"         return LEX_RRBRAC;
+";"         return LEX_SEMICOLON;
 
-"begin" return KW_BEGIN;
+({DECIMAL}|{HEXADECIMAL}|{OCTAL}) return LEX_NUMB;
 
-"const" return KW_CONST;
-
-"do" return KW_DO;
-
-"end" return KW_END;
-
-"for" return KW_FOR;
-
-"if" return KW_IF;
-
-"integer" return KW_INTEGER;
-
-"of" return KW_OF;
-
-"program" return KW_PROGRAM;
-
-"readln" return KW_READLN;
-
-"then" return KW_THEN;
-
-"to" return KW_TO;
-
-"var" return KW_VAR;
-
-"write" return KW_WRITE;
-
-"writeln" return KW_WRITELN;
-
-"+" return PLUS;
-
-"-" return MINUS;
-
-"*" return MULTIPLICATION;
-
-"/" return DIVISION;
-
-"mod" return MODULO;
-
-":=" return ASSIGNMENT;
-
-"=" return EQUALS_SIGN;
-
-";" return SEMICOLON;
-
-":" return COLON;
-
-"." return PERIOD;
-
-"[" return LEFT_BRACKET;
-
-"]" return RIGHT_BRACKET;
-
-"(" return LEFT_ROUND_BRACKET;
-
-")" return RIGHT_ROUND_BRACKET;
-
-([[:digit:]]{-}[0])[[:digit:]]* return DECIMAL;
-
-"$"[[:xdigit:]]+ return HEXADECIMAL;
-
-"&"[0-7]+ return OCTAL;
-
-{IDENTIFIER} return IDENTIFIER;
+{IDENTIFIER} return LEX_IDENT;
 
 [ \t\n]+ /* eat up whitespace */
 
+<<EOF>> return LEX_EOI;
 . printf("Unrecognized character: %s\n", YYText());
-
-<<EOF>> return EOI;

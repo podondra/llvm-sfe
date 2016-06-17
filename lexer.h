@@ -43,7 +43,6 @@ enum lexical_symbols {
     LEX_COMMA,
     LEX_DOT,
     LEX_DOTDOT,
-    LEX_PERIOD,
     LEX_LBRAC,
     LEX_RBRAC,
     LEX_LRBRAC,

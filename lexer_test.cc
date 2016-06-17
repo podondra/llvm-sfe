@@ -5,7 +5,7 @@
 int main() {
     FlexLexer *lexer = new yyFlexLexer();
     int lexical_symbol;
-    while ((lexical_symbol = lexer->yylex()) != EOI)
+    while ((lexical_symbol = lexer->yylex()) != LEX_EOI)
         printf("lexical symbol: %s (%d)\n",
                 lexer->YYText(),
                 lexical_symbol);
