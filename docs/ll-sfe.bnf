@@ -51,13 +51,13 @@ proc_or_func_decl_list_0 ::= ';' <proc_or_func_decl>
 proc_or_func_decl ::= <proc_decl>
                   | <func_decl>
 
-proc_decl ::= <proc_heading> ';' 'forward'
-          | <proc_heading> ';' <block>
+proc_decl ::= 'procedure' 'ident' <proc_decl_0>
 
-proc_heading ::= <proc_ident>
-             | <proc_ident> <formal_param_list>
+proc_decl_0 ::= ';' <proc_decl_1>
+            | <formal_param_list> ';' <proc_decl_1>
 
-proc_ident ::= 'procedure' 'ident'
+proc_decl_1 ::= 'forward'
+            | <block>
 
 func_decl ::= 'function' 'ident' <func_decl_0>
 
