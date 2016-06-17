@@ -1,7 +1,6 @@
 program ::= 'program' 'ident' ';' <block> '.'
 
-block ::= <const_def_part> <var_decl_part> <proc_and_func_decl_part>
-      <comp_stmt>
+block ::= <const_def_part> <var_decl_part> <proc_and_func_decl_part> <comp_stmt>
 
 const_def_part ::= 'const' <const_list>
                | ''
@@ -11,21 +10,18 @@ const_list ::= <const_def> <const_list_0>
 const_list_0 ::= <const_def> <const_list_0>
              | ''
 
-const_def ::= 'ident' '=' <const> ';'
+const_def ::= 'ident' '=' <constant> ';'
 
-const ::= <sign> 'number'
+constant ::= 'number'
+         | '+' 'number'
+         | '-' 'number'
 
-var_decl_part ::= <var_decl_section> ';'
+var_decl_part ::= 'var' <var_decl> <var_decl_list> <var_decl_part>
               | ''
 
-var_decl_section ::= 'var' <var_decl_list> <var_decl_section_0>
+var_decl_list ::= ';' <var_decl_list_0>
 
-var_decl_section_0 ::= ';' 'var' <var_decl_list> <var_decl_section_0>
-                   | ''
-
-var_decl_list ::= <var_decl> <var_decl_list_0>
-
-var_decl_list_0 ::= ';' <var_decl> <var_decl_list_0>
+var_decl_list_0 ::= <var_decl> <var_decl_list>
                 | ''
 
 var_decl ::= <ident_list> ':' <type>
@@ -38,14 +34,12 @@ ident_list_0 ::= ',' 'ident' <ident_list_0>
 type ::= 'integer'
      | 'array' '[' 'number' '..' 'number' ']' 'of' 'integer'
 
-proc_and_func_decl_part ::= <proc_or_func_decl_list> ';'
+proc_and_func_decl_part ::= <proc_or_func_decl> <proc_or_func_decl_list>
                         | ''
 
-proc_or_func_decl_list ::= <proc_or_func_decl>
-                       <proc_or_func_decl_list_0>
+proc_or_func_decl_list ::= ';' <proc_or_func_decl_list_0>
 
-proc_or_func_decl_list_0 ::= ';' <proc_or_func_decl>
-                         <proc_or_func_decl_list_0>
+proc_or_func_decl_list_0 ::= <proc_or_func_decl> <proc_or_func_decl_list>
                          | ''
 
 proc_or_func_decl ::= <proc_decl>
@@ -67,13 +61,14 @@ func_decl_0 ::= ':' 'integer' ';' <func_decl_1>
 func_decl_1 ::= 'forward'
             | <block>
 
-formal_param_list ::= '(' <formal_param_section_list> ')'
+formal_param_list ::= '(' <formal_param_sec_list> ')'
 
-formal_param_section_list ::= <formal_param_section_list> ';'
-                          <formal_param_section>
-                          | <formal_param_section>
+formal_param_sec_list ::= <formal_param_sec> <formal_param_sec_list_0>
 
-formal_param_section ::= <ident_list> ':' <type>
+formal_param_sec_list_0 ::= ';' <formal_param_sec> <formal_param_sec_list_0>
+                        | ''
+
+formal_param_sec ::= <ident_list> ':' <type>
 
 comp_stmt ::= 'begin' <stmt_seq> 'end'
 
@@ -99,66 +94,60 @@ while_stmt ::= 'while' <expr> 'do' <stmt>
 
 for_stmt ::= 'for' 'ident' ':=' <expr> <dir> <expr> 'do' <stmt>
 
+if_stmt ::= 'if' <expr> 'then' <stmt> <else_stmt>
+
+else_stmt ::= 'else' <stmt>
+          | ''
+
 dir ::= 'to'
     | 'downto'
 
-expr ::= <simple_expr>
-     | <simple_expr> <relop> <simple_expr>
+expr ::= <simple_expr> <expr_0>
+
+expr_0 ::= '=' <simple_expr>
+       |'<>' <simple_expr>
+       |'<' <simple_expr>
+       |'>' <simple_expr>
+       |'<=' <simple_expr>
+       |'>=' <simple_expr>
+       | ''
 
 simple_expr ::= <term> <simple_expr_0>
 
-simple_expr_0 ::= <addop> <term> <simple_expr_0>
+simple_expr_0 ::= '+' <term> <simple_expr_0>
+              | '-' <term> <simple_expr_0>
               | ''
 
 term ::= <factor> <term_0>
 
-term_0 ::= <mulop> <factor> <term_0>
+term_0 ::= '*' <factor> <term_0>
+       | 'div' <factor> <term_0>
+       | 'mod' <factor> <term_0>
        | ''
 
-sign ::= '+'
-     | '-'
-
-addop ::= '+'
-      | '-'
-
-mulop ::= '*'
-      | 'div'
-      | 'mod'
-
-relop ::= '='
-      | '<>'
-      | '<'
-      | '>'
-      | '<='
-      | '>='
-
-factor ::= <sign> <factor>
+factor ::= '+' <factor>
+       | '-' <factor>
        | <exp>
 
-exp ::= <primary>
-    | <primary> '**' <exp>
+exp ::= <primary> <exp_0>
 
-primary ::= <var_access>
+exp_0 ::= '**' <exp>
+      | ''
+
+primary ::= 'ident' <primary_0>
         | 'number'
-        | <func_call>
         | '(' <expr> ')'
         | 'not' <primary>
 
-func_call ::= 'ident' <params>
+primary_0 ::= '(' <actual_param_list> ')'
+          | <var_access_0>
 
 var_access ::= 'ident' <var_access_0>
 
 var_access_0 ::= '[' <expr> ']' <var_access_0>
              | ''
 
-params ::= '(' <actual_param_list> ')'
-
 actual_param_list ::= <expr> <actual_param_list_0>
 
 actual_param_list_0 ::= ',' <expr> <actual_param_list_0>
                     | ''
-
-if_stmt ::= 'if' <expr> 'then' <stmt> <else_stmt>
-
-else_stmt ::= 'else' <stmt>
-          | ''
