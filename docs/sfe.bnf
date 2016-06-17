@@ -48,13 +48,13 @@ proc_decl ::= <proc_heading> ';' 'forward'
 proc_heading ::= <proc_ident>
              | <proc_ident> <formal_param_list>
 
-proc_ident ::= 'proc' 'ident'
+proc_ident ::= 'procedure' 'ident'
 
 func_decl ::= <func_heading> ';' 'forward'
           | <func_heading> ';' <block>
 
-func_heading ::= 'func' 'ident' ':' 'integer'
-             | 'func' 'ident' <formal_param_list> ':' 'integer'
+func_heading ::= 'function' 'ident' ':' 'integer'
+             | 'function' 'ident' <formal_param_list> ':' 'integer'
 
 formal_param_list ::= '(' <formal_param_section_list> ')'
 
