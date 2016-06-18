@@ -17,13 +17,13 @@ OCTAL       "&"[0-7]+
 "begin"     return LEX_BEGIN;
 "const"     return LEX_CONST;
 "do"        return LEX_DO;
-"downto"    return LEX_DO;
+"downto"    return LEX_DOWNTO;
 "else"      return LEX_ELSE;
 "end"       return LEX_END;
 "exit"      return LEX_EXIT;
 "for"       return LEX_FOR;
 "forward"   return LEX_FORW;
-"funciton"  return LEX_FORW;
+"function"  return LEX_FUNC;
 "if"        return LEX_IF;
 "integer"   return LEX_INT;
 "of"        return LEX_OF;
@@ -36,7 +36,7 @@ OCTAL       "&"[0-7]+
 "while"     return LEX_WHILE;
 "write"     return LEX_WRITE;
 "writeln"   return LEX_WRITELN;
-"/"         return LEX_DIV;
+"div"       return LEX_DIV;
 "**"        return LEX_EXP;
 "-"         return LEX_MINUS;
 "mod"       return LEX_MOD;

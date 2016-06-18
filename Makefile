@@ -4,7 +4,16 @@ CXXFLAGS = -std=c++11 -pedantic-errors -Wall
 FLEX = flex++
 FLEXFLAGS= -Cfa --8bit --noyywrap --warn
 
-lexer_tester: lexer.o lexer_test.o
+parser_test: parser.o parser_test.o lexer.o
+	$(LD) $(LDFLAGS) -o $@ $^
+
+parser_test.o: parser_test.cc
+	$(CXX) $(CXXFLAGS) -o $@ -c $^
+
+parser.o: parser.cc
+	$(CXX) $(CXXFLAGS) -o $@ -c $^
+
+lexer_test: lexer.o lexer_test.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 lexer_test.o: lexer_test.cc
@@ -17,4 +26,4 @@ lexer.cc: lexer.l
 	$(FLEX) $(FLEXFLAGS) -o $@ $^
 
 clean:
-	$(RM) lexer.cc *.o lexer_tester
+	$(RM) lexer.cc *.o lexer_test parser_test

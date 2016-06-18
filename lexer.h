@@ -3,7 +3,7 @@
 
 extern long int yynumbval;
 
-enum lexical_symbols {
+enum lexsymb {
     LEX_ARRAY,
     LEX_BEGIN,
     LEX_CONST,
