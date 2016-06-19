@@ -39,10 +39,8 @@ void yyParser::def_and_decl_list() {
             def_or_decl();
             def_and_decl_list();
             break;
-        case LEX_BEGIN:
-            break;
         default:
-            throw std::logic_error{"def_and_decl_list error"};
+            break;
     }
 }
 
@@ -77,14 +75,8 @@ void yyParser::const_list() {
             const_def();
             const_list();
             break;
-        case LEX_CONST:
-        case LEX_VAR:
-        case LEX_PROC:
-        case LEX_FUNC:
-        case LEX_BEGIN:
-            break;
         default:
-            throw std::logic_error{"const_list error"};
+            break;
     }
 }
 
@@ -133,14 +125,8 @@ void yyParser::var_decl_list() {
             match(LEX_SEMICOLON);
             var_decl_list();
             break;
-        case LEX_CONST:
-        case LEX_VAR:
-        case LEX_PROC:
-        case LEX_FUNC:
-        case LEX_BEGIN:
-            break;
         default:
-            throw std::logic_error{"var_decl_list error"};
+            break;
     }
 }
 
@@ -162,10 +148,8 @@ void yyParser::ident_list_0() {
             match(LEX_IDENT);
             ident_list_0();
             break;
-        case LEX_COLON:
-            break;
         default:
-            throw std::logic_error{"ident_list_0 error"};
+            break;
     }
 }
 
@@ -293,10 +277,8 @@ void yyParser::formal_param_sec_list_0() {
             formal_param_sec();
             formal_param_sec_list_0();
             break;
-        case LEX_RRBRAC:
-            break;
         default:
-            throw std::logic_error{"formal_param_sec_list_0 error"};
+            break;
     }
 }
 
@@ -324,10 +306,8 @@ void yyParser::stmt_seq_0() {
             stmt();
             stmt_seq_0();
             break;
-        case LEX_END:
-            break;
         default:
-            throw std::logic_error{"stmt_seq_0 error"};
+            break;
     }
 }
 
@@ -371,21 +351,13 @@ void yyParser::stmt() {
         case LEX_IF:
             if_stmt();
             break;
-        case LEX_SEMICOLON:
-        case LEX_ELSE:
-        case LEX_END:
-            break;
         default:
-            throw std::logic_error{"stmt error"};
+            break;
     }
 }
 
 void yyParser::assign_or_proc_stmt() {
     switch (yylexsymb) {
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_ELSE:
-            break;
         case LEX_LBRAC:
         case LEX_ASSIGN:
             var_assign();
@@ -397,7 +369,7 @@ void yyParser::assign_or_proc_stmt() {
             match(LEX_RRBRAC);
             break;
         default:
-            throw std::logic_error{"assign_or_stmt error"};
+            break;
     }
 }
 
@@ -445,15 +417,12 @@ void yyParser::if_stmt() {
 
 void yyParser::else_stmt() {
     switch (yylexsymb) {
-        case LEX_SEMICOLON:
-        case LEX_END:
-            break;
         case LEX_ELSE:
             yylexsymb = yylexer.yylex();
             stmt();
             break;
         default:
-            throw std::logic_error{"else_stmt error"};
+            break;
     }
 }
 
@@ -501,19 +470,8 @@ void yyParser::expr_0() {
             yylexsymb = yylexer.yylex();
             simple_expr();
             break;
-        case LEX_RRBRAC:
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_DO:
-        case LEX_TO:
-        case LEX_DOWNTO:
-        case LEX_RBRAC:
-        case LEX_COMMA:
-        case LEX_THEN:
-        case LEX_ELSE:
-            break;
         default:
-            throw std::logic_error{"expr_0 error"};
+            break;
     }
 }
 void yyParser::simple_expr() {
@@ -538,25 +496,8 @@ void yyParser::simple_expr_0() {
             term();
             simple_expr_0();
             break;
-        case LEX_EQ:
-        case LEX_NE:
-        case LEX_LT:
-        case LEX_GT:
-        case LEX_LE:
-        case LEX_GE:
-        case LEX_RRBRAC:
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_DO:
-        case LEX_TO:
-        case LEX_DOWNTO:
-        case LEX_RBRAC:
-        case LEX_COMMA:
-        case LEX_THEN:
-        case LEX_ELSE:
-            break;
         default:
-            throw std::logic_error{"simple_expr_0 error"};
+            break;
     }
 }
 
@@ -587,28 +528,8 @@ void yyParser::term_0() {
             factor();
             term_0();
             break;
-        case LEX_PLUS:
-        case LEX_MINUS:
-        case LEX_OR:
-        case LEX_EQ:
-        case LEX_NE:
-        case LEX_LT:
-        case LEX_GT:
-        case LEX_LE:
-        case LEX_GE:
-        case LEX_RRBRAC:
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_DO:
-        case LEX_TO:
-        case LEX_DOWNTO:
-        case LEX_RBRAC:
-        case LEX_COMMA:
-        case LEX_THEN:
-        case LEX_ELSE:
-            break;
         default:
-            throw std::logic_error{"term_0 error"};
+            break;
     }
 }
 
@@ -644,32 +565,8 @@ void yyParser::exp_0() {
             yylexsymb = yylexer.yylex();
             exp();
             break;
-        case LEX_MUL:
-        case LEX_DIV:
-        case LEX_MOD:
-        case LEX_AND:
-        case LEX_PLUS:
-        case LEX_MINUS:
-        case LEX_OR:
-        case LEX_EQ:
-        case LEX_NE:
-        case LEX_LT:
-        case LEX_GT:
-        case LEX_LE:
-        case LEX_GE:
-        case LEX_RRBRAC:
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_DO:
-        case LEX_TO:
-        case LEX_DOWNTO:
-        case LEX_RBRAC:
-        case LEX_COMMA:
-        case LEX_THEN:
-        case LEX_ELSE:
-            break;
         default:
-            throw std::logic_error{"exp_0 error"};
+            break;
     }
 }
 
@@ -743,34 +640,8 @@ void yyParser::var_access() {
             match(LEX_RBRAC);
             var_access();
             break;
-        case LEX_EXP:
-        case LEX_MUL:
-        case LEX_DIV:
-        case LEX_MOD:
-        case LEX_AND:
-        case LEX_PLUS:
-        case LEX_MINUS:
-        case LEX_OR:
-        case LEX_EQ:
-        case LEX_NE:
-        case LEX_LT:
-        case LEX_GT:
-        case LEX_LE:
-        case LEX_GE:
-        case LEX_RRBRAC:
-        case LEX_SEMICOLON:
-        case LEX_END:
-        case LEX_DO:
-        case LEX_TO:
-        case LEX_DOWNTO:
-        case LEX_ASSIGN:
-        case LEX_RBRAC:
-        case LEX_COMMA:
-        case LEX_THEN:
-        case LEX_ELSE:
-            break;
         default:
-            throw std::logic_error{"var_access error"};
+            break;
     }
 }
 
@@ -786,9 +657,7 @@ void yyParser::actual_param_list_0() {
             expr();
             actual_param_list_0();
             break;
-        case LEX_RRBRAC:
-            break;
         default:
-            throw std::logic_error{"actual_param_list_0 error"};
+            break;
     }
 }
