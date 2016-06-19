@@ -1,0 +1,101 @@
+parser -> program ident ; block .
+block -> def_and_decl_list comp_stmt
+def_and_decl_list -> def_or_decl def_and_decl_list
+def_and_decl_list -> ''
+def_or_decl -> proc_decl
+def_or_decl -> func_decl
+def_or_decl -> var_decl_part
+def_or_decl -> const_def_part
+const_def_part -> const const_def const_list
+const_list -> const_def const_list
+const_list -> ''
+const_def -> ident = constant ;
+constant -> number
+constant -> + number
+constant -> - number
+var_decl_part -> var var_decl ; var_decl_list
+var_decl_list -> var_decl ; var_decl_list
+var_decl_list -> ''
+var_decl -> ident_list : type
+ident_list -> ident ident_list_0
+ident_list_0 -> , ident ident_list_0
+ident_list_0 -> ''
+type -> integer
+type -> array [ number .. number ] of integer
+proc_decl -> procedure ident proc_decl_0 ;
+proc_decl_0 -> ; proc_decl_1
+proc_decl_0 -> formal_param_list ; proc_decl_1
+proc_decl_1 -> forward
+proc_decl_1 -> block
+func_decl -> function ident func_decl_0 ;
+func_decl_0 -> : integer ; func_decl_1
+func_decl_0 -> formal_param_list : integer ; func_decl_1
+func_decl_1 -> forward 
+func_decl_1 -> block
+formal_param_list -> ( formal_param_sec_list )
+formal_param_sec_list -> formal_param_sec formal_param_sec_list_0
+formal_param_sec_list_0 -> ; formal_param_sec formal_param_sec_list_0
+formal_param_sec_list_0 -> ''
+formal_param_sec -> ident_list : type
+comp_stmt -> begin stmt_seq end
+stmt_seq -> stmt stmt_seq_0
+stmt_seq_0 -> ; stmt stmt_seq_0
+stmt_seq_0 -> ''
+stmt -> ident assign_or_proc_stmt
+stmt -> comp_stmt
+stmt -> if_stmt
+stmt -> while_stmt
+stmt -> for_stmt
+stmt -> exit
+stmt -> readln ( ident var_access )
+stmt -> writeln ( expr )
+stmt -> write ( expr )
+stmt -> ''
+assign_or_proc_stmt -> var_assign expr
+assign_or_proc_stmt -> ( actual_param_list )
+assign_or_proc_stmt -> ''
+var_assign -> [ expr ] var_assign
+var_assign -> :=
+while_stmt -> while expr do stmt
+for_stmt -> for ident := expr dir expr do stmt
+dir -> to
+dir -> downto
+expr -> simple_expr expr_0
+expr_0 -> = simple_expr
+expr_0 -> <> simple_expr
+expr_0 -> < simple_expr
+expr_0 -> > simple_expr
+expr_0 -> <= simple_expr
+expr_0 -> >= simple_expr
+expr_0 -> ''
+simple_expr -> term simple_expr_0
+simple_expr_0 -> + term simple_expr_0
+simple_expr_0 -> - term simple_expr_0
+simple_expr_0 -> or term simple_expr_0
+simple_expr_0 -> ''
+term -> factor term_0
+term_0 -> * factor term_0
+term_0 -> div factor term_0
+term_0 -> mod factor term_0
+term_0 -> and factor term_0
+term_0 -> ''
+factor -> + factor
+factor -> - factor
+factor -> exp
+exp -> primary exp_0
+exp_0 -> ** exp
+exp_0 -> ''
+primary -> ident primary_0
+primary -> number
+primary -> ( expr )
+primary -> not primary
+primary_0 -> ( actual_param_list )
+primary_0 -> var_access
+var_access -> [ expr ] var_access
+var_access -> ''
+actual_param_list -> expr actual_param_list_0
+actual_param_list_0 -> , expr actual_param_list_0
+actual_param_list_0 -> ''
+if_stmt -> if expr then stmt else_stmt
+else_stmt -> else stmt
+else_stmt -> ''
