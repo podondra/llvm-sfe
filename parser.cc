@@ -5,25 +5,22 @@
 
 void yyParser::yyparse() {
     yylexsymb = yylexer.yylex();
-    printf("%s\n", yylexer.YYText());
     program();
     if (yylexsymb != LEX_EOI)
         throw std::logic_error{"eoi error"};
 }
 
 void yyParser::match(int symb) {
-    if (yylexsymb == symb) {
+    if (yylexsymb == symb)
         yylexsymb = yylexer.yylex();
-        printf("%s (%d)\n", yylexer.YYText(), yylexsymb);
-    } else {
+    else
         throw std::logic_error{"match error"};
-    }
 }
 
 void yyParser::program() {
     switch (yylexsymb) {
         case LEX_PROGRAM:
-            match(LEX_PROGRAM);
+            yylexsymb = yylexer.yylex();
             match(LEX_IDENT);
             match(LEX_SEMICOLON);
             block();
@@ -89,7 +86,7 @@ void yyParser::def_or_decl() {
 void yyParser::const_def_part() {
     switch (yylexsymb) {
         case LEX_CONST:
-            match(LEX_CONST);
+            yylexsymb = yylexer.yylex();
             const_def();
             const_list();
             break;
@@ -118,7 +115,7 @@ void yyParser::const_list() {
 void yyParser::const_def() {
     switch (yylexsymb) {
         case LEX_IDENT:
-            match(LEX_IDENT);
+            yylexsymb = yylexer.yylex();
             match(LEX_EQ);
             constant();
             match(LEX_SEMICOLON);
@@ -131,14 +128,14 @@ void yyParser::const_def() {
 void yyParser::constant() {
     switch (yylexsymb) {
         case LEX_NUMB:
-            match(LEX_NUMB);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_PLUS:
-            match(LEX_PLUS);
+            yylexsymb = yylexer.yylex();
             match(LEX_NUMB);
             break;
         case LEX_MINUS:
-            match(LEX_MINUS);
+            yylexsymb = yylexer.yylex();
             match(LEX_NUMB);
             break;
         default:
@@ -149,7 +146,7 @@ void yyParser::constant() {
 void yyParser::var_decl_part() {
     switch (yylexsymb) {
         case LEX_VAR:
-            match(LEX_VAR);
+            yylexsymb = yylexer.yylex();
             var_decl();
             match(LEX_SEMICOLON);
             var_decl_list();
@@ -192,7 +189,7 @@ void yyParser::var_decl() {
 void yyParser::ident_list() {
     switch (yylexsymb) {
         case LEX_IDENT:
-            match(LEX_IDENT);
+            yylexsymb = yylexer.yylex();
             ident_list_0();
             break;
         default:
@@ -203,7 +200,7 @@ void yyParser::ident_list() {
 void yyParser::ident_list_0() {
     switch (yylexsymb) {
         case LEX_COMMA:
-            match(LEX_COMMA);
+            yylexsymb = yylexer.yylex();
             match(LEX_IDENT);
             ident_list_0();
             break;
@@ -217,10 +214,10 @@ void yyParser::ident_list_0() {
 void yyParser::type() {
     switch (yylexsymb) {
         case LEX_INT:
-            match(LEX_INT);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_ARRAY:
-            match(LEX_ARRAY);
+            yylexsymb = yylexer.yylex();
             match(LEX_LBRAC);
             constant();
             match(LEX_DOTDOT);
@@ -237,7 +234,7 @@ void yyParser::type() {
 void yyParser::proc_decl() {
     switch (yylexsymb) {
         case LEX_PROC:
-            match(LEX_PROC);
+            yylexsymb = yylexer.yylex();
             match(LEX_IDENT);
             proc_decl_0();
             match(LEX_SEMICOLON);
@@ -250,7 +247,7 @@ void yyParser::proc_decl() {
 void yyParser::proc_decl_0() {
     switch (yylexsymb) {
         case LEX_SEMICOLON:
-            match(LEX_SEMICOLON);
+            yylexsymb = yylexer.yylex();
             proc_decl_1();
             break;
         case LEX_LRBRAC:
@@ -266,7 +263,7 @@ void yyParser::proc_decl_0() {
 void yyParser::proc_decl_1() {
     switch (yylexsymb) {
         case LEX_FORW:
-            match(LEX_FORW);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_SEMICOLON:
         case LEX_CONST:
@@ -284,7 +281,7 @@ void yyParser::proc_decl_1() {
 void yyParser::func_decl() {
     switch (yylexsymb) {
         case LEX_FUNC:
-            match(LEX_FUNC);
+            yylexsymb = yylexer.yylex();
             match(LEX_IDENT);
             func_decl_0();
             match(LEX_SEMICOLON);
@@ -297,7 +294,7 @@ void yyParser::func_decl() {
 void yyParser::func_decl_0() {
     switch (yylexsymb) {
         case LEX_COLON:
-            match(LEX_COLON);
+            yylexsymb = yylexer.yylex();
             match(LEX_INT);
             match(LEX_SEMICOLON);
             func_decl_1();
@@ -317,7 +314,7 @@ void yyParser::func_decl_0() {
 void yyParser::func_decl_1() {
     switch (yylexsymb) {
         case LEX_FORW:
-            match(LEX_FORW);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_SEMICOLON:
         case LEX_CONST:
@@ -335,7 +332,7 @@ void yyParser::func_decl_1() {
 void yyParser::formal_param_list() {
     switch (yylexsymb) {
         case LEX_LRBRAC:
-            match(LEX_LRBRAC);
+            yylexsymb = yylexer.yylex();
             formal_param_sec_list();
             match(LEX_RRBRAC);
             break;
@@ -358,7 +355,7 @@ void yyParser::formal_param_sec_list() {
 void yyParser::formal_param_sec_list_0() {
     switch (yylexsymb) {
         case LEX_SEMICOLON:
-            match(LEX_SEMICOLON);
+            yylexsymb = yylexer.yylex();
             formal_param_sec();
             formal_param_sec_list_0();
             break;
@@ -384,7 +381,7 @@ void yyParser::formal_param_sec() {
 void yyParser::comp_stmt() {
     switch (yylexsymb) {
         case LEX_BEGIN:
-            match(LEX_BEGIN);
+            yylexsymb = yylexer.yylex();
             stmt_seq();
             match(LEX_END);
             break;
@@ -416,7 +413,7 @@ void yyParser::stmt_seq() {
 void yyParser::stmt_seq_0() {
     switch (yylexsymb) {
         case LEX_SEMICOLON:
-            match(LEX_SEMICOLON);
+            yylexsymb = yylexer.yylex();
             stmt();
             stmt_seq_0();
             break;
@@ -430,30 +427,30 @@ void yyParser::stmt_seq_0() {
 void yyParser::stmt() {
     switch (yylexsymb) {
         case LEX_IDENT:
-            match(LEX_IDENT);
+            yylexsymb = yylexer.yylex();
             assign_or_proc_stmt();
             break;
         case LEX_BEGIN:
             comp_stmt();
             break;
         case LEX_EXIT:
-            match(LEX_EXIT);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_READLN:
-            match(LEX_READLN);
+            yylexsymb = yylexer.yylex();
             match(LEX_LRBRAC);
             match(LEX_IDENT);
             var_access();
             match(LEX_RRBRAC);
             break;
         case LEX_WRITELN:
-            match(LEX_WRITELN);
+            yylexsymb = yylexer.yylex();
             match(LEX_LRBRAC);
             expr();
             match(LEX_RRBRAC);
             break;
         case LEX_WRITE:
-            match(LEX_WRITE);
+            yylexsymb = yylexer.yylex();
             match(LEX_LRBRAC);
             expr();
             match(LEX_RRBRAC);
@@ -488,7 +485,7 @@ void yyParser::assign_or_proc_stmt() {
             expr();
             break;
         case LEX_LRBRAC:
-            match(LEX_LRBRAC);
+            yylexsymb = yylexer.yylex();
             actual_param_list();
             match(LEX_RRBRAC);
             break;
@@ -500,13 +497,13 @@ void yyParser::assign_or_proc_stmt() {
 void yyParser::var_assign() {
     switch (yylexsymb) {
         case LEX_LBRAC:
-            match(LEX_LBRAC);
+            yylexsymb = yylexer.yylex();
             expr();
             match(LEX_RBRAC);
             var_assign();
             break;
         case LEX_ASSIGN:
-            match(LEX_ASSIGN);
+            yylexsymb = yylexer.yylex();
             break;
         default:
             throw std::logic_error{"var_assign error"};
@@ -516,7 +513,7 @@ void yyParser::var_assign() {
 void yyParser::while_stmt() {
     switch (yylexsymb) {
         case LEX_WHILE:
-            match(LEX_WHILE);
+            yylexsymb = yylexer.yylex();
             expr();
             match(LEX_DO);
             stmt();
@@ -529,7 +526,7 @@ void yyParser::while_stmt() {
 void yyParser::for_stmt() {
     switch (yylexsymb) {
         case LEX_FOR:
-            match(LEX_FOR);
+            yylexsymb = yylexer.yylex();
             match(LEX_IDENT);
             match(LEX_ASSIGN);
             expr();
@@ -546,7 +543,7 @@ void yyParser::for_stmt() {
 void yyParser::if_stmt() {
     switch (yylexsymb) {
         case LEX_IF:
-            match(LEX_IF);
+            yylexsymb = yylexer.yylex();
             expr();
             match(LEX_THEN);
             stmt();
@@ -563,7 +560,7 @@ void yyParser::else_stmt() {
         case LEX_END:
             break;
         case LEX_ELSE:
-            match(LEX_ELSE);
+            yylexsymb = yylexer.yylex();
             stmt();
             break;
         default:
@@ -574,10 +571,10 @@ void yyParser::else_stmt() {
 void yyParser::dir() {
     switch (yylexsymb) {
         case LEX_TO:
-            match(LEX_TO);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_DOWNTO:
-            match(LEX_DOWNTO);
+            yylexsymb = yylexer.yylex();
             break;
         default:
             throw std::logic_error{"dir error"};
@@ -603,27 +600,27 @@ void yyParser::expr() {
 void yyParser::expr_0() {
     switch (yylexsymb) {
         case LEX_EQ:
-            match(LEX_EQ);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_NE:
-            match(LEX_NE);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_LT:
-            match(LEX_LT);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_GT:
-            match(LEX_GT);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_LE:
-            match(LEX_LE);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_GE:
-            match(LEX_GE);
+            yylexsymb = yylexer.yylex();
             simple_expr();
             break;
         case LEX_RRBRAC:
@@ -660,17 +657,17 @@ void yyParser::simple_expr() {
 void yyParser::simple_expr_0() {
     switch (yylexsymb) {
         case LEX_PLUS:
-            match(LEX_PLUS);
+            yylexsymb = yylexer.yylex();
             term();
             simple_expr_0();
             break;
         case LEX_MINUS:
-            match(LEX_MINUS);
+            yylexsymb = yylexer.yylex();
             term();
             simple_expr_0();
             break;
         case LEX_OR:
-            match(LEX_OR);
+            yylexsymb = yylexer.yylex();
             term();
             simple_expr_0();
             break;
@@ -715,22 +712,22 @@ void yyParser::term() {
 void yyParser::term_0() {
     switch (yylexsymb) {
         case LEX_MUL:
-            match(LEX_MUL);
+            yylexsymb = yylexer.yylex();
             factor();
             term_0();
             break;
         case LEX_DIV:
-            match(LEX_DIV);
+            yylexsymb = yylexer.yylex();
             factor();
             term_0();
             break;
         case LEX_MOD:
-            match(LEX_MOD);
+            yylexsymb = yylexer.yylex();
             factor();
             term_0();
             break;
         case LEX_AND:
-            match(LEX_AND);
+            yylexsymb = yylexer.yylex();
             factor();
             term_0();
             break;
@@ -762,11 +759,11 @@ void yyParser::term_0() {
 void yyParser::factor() {
     switch (yylexsymb) {
         case LEX_PLUS:
-            match(LEX_PLUS);
+            yylexsymb = yylexer.yylex();
             factor();
             break;
         case LEX_MINUS:
-            match(LEX_MINUS);
+            yylexsymb = yylexer.yylex();
             factor();
             break;
         case LEX_IDENT:
@@ -797,7 +794,7 @@ void yyParser::exp() {
 void yyParser::exp_0() {
     switch (yylexsymb) {
         case LEX_EXP:
-            match(LEX_EXP);
+            yylexsymb = yylexer.yylex();
             exp();
             break;
         case LEX_MUL:
@@ -832,19 +829,19 @@ void yyParser::exp_0() {
 void yyParser::primary() {
     switch (yylexsymb) {
         case LEX_IDENT:
-            match(LEX_IDENT);
+            yylexsymb = yylexer.yylex();
             primary_0();
             break;
         case LEX_NUMB:
-            match(LEX_NUMB);
+            yylexsymb = yylexer.yylex();
             break;
         case LEX_LRBRAC:
-            match(LEX_LRBRAC);
+            yylexsymb = yylexer.yylex();
             expr();
             match(LEX_RRBRAC);
             break;
         case LEX_NOT:
-            match(LEX_NOT);
+            yylexsymb = yylexer.yylex();
             primary();
             break;
         default:
@@ -855,7 +852,7 @@ void yyParser::primary() {
 void yyParser::primary_0() {
     switch (yylexsymb) {
         case LEX_LRBRAC:
-            match(LEX_LRBRAC);
+            yylexsymb = yylexer.yylex();
             actual_param_list();
             match(LEX_RRBRAC);
             break;
@@ -894,7 +891,7 @@ void yyParser::primary_0() {
 void yyParser::var_access() {
     switch (yylexsymb) {
         case LEX_LBRAC:
-            match(LEX_LBRAC);
+            yylexsymb = yylexer.yylex();
             expr();
             match(LEX_RBRAC);
             var_access();
@@ -949,7 +946,7 @@ void yyParser::actual_param_list() {
 void yyParser::actual_param_list_0() {
     switch (yylexsymb) {
         case LEX_COMMA:
-            match(LEX_COMMA);
+            yylexsymb = yylexer.yylex();
             expr();
             actual_param_list_0();
             break;
