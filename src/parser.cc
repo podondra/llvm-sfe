@@ -1,8 +1,11 @@
+#include <fstream>
 #include <stdexcept>
 #include <FlexLexer.h>
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
+
+yyParser::yyParser(std::ifstream *in) : yylexer{in} {}
 
 ast::node *yyParser::yyparse() {
     yylexsymb = yylexer.yylex();

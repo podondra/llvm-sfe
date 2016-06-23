@@ -1,6 +1,7 @@
 #ifndef parser_h_msj16e76apo2jy7i
 #define parser_h_msj16e76apo2jy7i
 
+#include <fstream>
 #include <memory>
 #include <string>
 #include <FlexLexer.h>
@@ -9,6 +10,7 @@
 
 class yyParser {
     public:
+        yyParser(std::ifstream *);
         ast::node *yyparse();
     private:
         yyFlexLexer yylexer;
