@@ -1,4 +1,10 @@
 program print;
+
 begin
-    writeln(1 - 4);
+    if 2 = 0 then
+        writeln(1)
+    else
+        writeln(2);
+    if 1 = 1 then
+        writeln(1);
 end.

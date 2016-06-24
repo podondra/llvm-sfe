@@ -1,4 +1,4 @@
-program expressions;
+program expressions3;
 
 const
     Multiplyer = 5;
