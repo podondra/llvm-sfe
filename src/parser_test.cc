@@ -11,13 +11,9 @@ int main(int argc, char **argv) {
     if (in == nullptr)
         return 1;
     auto parser = yyParser{in};
-    ast::node *root = nullptr;
-    try {
-        root = parser.yyparse();
-    } catch (const std::logic_error& e) {
-        printf("%s\n", e.what());
-    }
-    root->dump(0);
+    ast::node *root = parser.yyparse();
+    if (root != nullptr)
+        root->dump(0);
     delete root;
     delete in;
     return 0;

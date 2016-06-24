@@ -5,13 +5,14 @@
 #include "parser.h"
 #include "ast.h"
 
-yyParser::yyParser(std::ifstream *in) : yylexer{in} {}
+yyParser::yyParser(std::ifstream *in)
+    : yylexer{in} {}
 
 ast::node *yyParser::yyparse() {
     yylexsymb = yylexer.yylex();
     auto root = program();
     if (yylexsymb != LEX_EOI)
-        throw std::logic_error{"eoi error"};
+        return nullptr;
     return root;
 }
 
@@ -19,7 +20,7 @@ void yyParser::match(int symb) {
     if (yylexsymb == symb)
         yylexsymb = yylexer.yylex();
     else
-        throw std::logic_error{"match error"};
+        std::cout << "match error" << std::endl;
 }
 
 std::string yyParser::get_ident() {
@@ -65,7 +66,8 @@ ast::decl *yyParser::def_or_decl() {
         case LEX_FUNC:
             return func_decl();
         default:
-            throw std::logic_error{"def_or_decl error"};
+            std::cout << "def_or_decl error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -97,7 +99,8 @@ ast::decl *yyParser::const_def() {
             return new ast::const_decl{n, v};
         }
         default:
-            throw std::logic_error{"const_def error"};
+            std::cout << "const_def error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -115,7 +118,8 @@ int yyParser::constant() {
             match(LEX_NUMB);
             return -yynumbval;
         default:
-            throw std::logic_error{"constant error"};
+            std::cout << "constant error" << std::endl;
+            return -1;
     }
 }
 
@@ -181,7 +185,8 @@ std::shared_ptr<ast::type> yyParser::type() {
             match(LEX_INT);
             return std::make_shared<ast::array_type>();
         default:
-            throw std::logic_error{"type error"};
+            std::cout << "type error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -205,7 +210,7 @@ void yyParser::proc_decl_0() {
             proc_decl_1();
             break;
         default:
-            throw std::logic_error{"proc_decl_0 error"};
+            std::cout << "proc_decl_0 error" << std::endl;
     }
 }
 
@@ -223,7 +228,7 @@ void yyParser::proc_decl_1() {
             block();
             break;
         default:
-            throw std::logic_error{"proc_decl_1 error"};
+            std::cout << "proc_decl_1 error" << std::endl;
     }
 }
 
@@ -251,7 +256,7 @@ void yyParser::func_decl_0() {
             func_decl_1();
             break;
         default:
-            throw std::logic_error{"func_decl_0 error"};
+            std::cout << "func_decl_0 error" << std::endl;
     }
 }
 
@@ -269,7 +274,7 @@ void yyParser::func_decl_1() {
             block();
             break;
         default:
-            throw std::logic_error{"func_decl_1 error"};
+            std::cout << "func_decl_1 error" << std::endl;
     }
 }
 
@@ -403,7 +408,7 @@ void yyParser::var_assign(ast::var_access *v) {
             yylexsymb = yylexer.yylex();
             break;
         default:
-            throw std::logic_error{"var_assign error"};
+            std::cout << "var_assign error" << std::endl;
     }
 }
 
@@ -453,7 +458,8 @@ int yyParser::dir() {
             yylexsymb = yylexer.yylex();
             return ast::DIR_DOWNTO;
         default:
-            throw std::logic_error{"dir error"};
+            std::cout << "dir error" << std::endl;
+            return -1;
     }
 }
 
@@ -543,7 +549,8 @@ ast::expr *yyParser::factor() {
         case LEX_NOT:
             return exp();
         default:
-            throw std::logic_error{"factor error"};
+            std::cout << "factor error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -581,7 +588,8 @@ ast::expr *yyParser::primary() {
             yylexsymb = yylexer.yylex();
             return new ast::not_expr{primary()};
         default:
-            throw std::logic_error{"primary error"};
+            std::cout << "primary error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -619,7 +627,8 @@ ast::expr *yyParser::primary_0(ast::var_access *v) {
         case LEX_ELSE:
             return var_access(v);
         default:
-            throw std::logic_error{"primary_0 error"};
+            std::cout << "primary_0 error" << std::endl;
+            return nullptr;
     }
 }
 
