@@ -63,12 +63,14 @@ class decl_list : public decl {
     public:
         decl_list(decl *, decl_list *);
         virtual ~decl_list();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
 class null_decl_list : public decl_list {
     public:
         null_decl_list();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -101,6 +103,7 @@ class stmt_list : public stmt {
 class null_stmt_list : public stmt_list {
     public:
         null_stmt_list();
+        virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -131,6 +134,7 @@ class const_decl : public decl {
         int val;
     public:
         const_decl(const std::string&, int);
+        llvm::Value *gen_ir(); 
         virtual void dump(int) const;
 };
 
@@ -141,6 +145,7 @@ class var_decl : public decl {
     public:
         var_decl(const std::string&);
         virtual void add_type(std::shared_ptr<type> t);
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -272,6 +277,7 @@ class unary_expr : public expr {
 class minus_expr : public unary_expr {
     public:
         minus_expr(expr *);
+        virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -293,6 +299,18 @@ class var_access : public expr {
     public:
         var_access(const std::string &);
         ~var_access();
+        void add_idx(expr *);
+        virtual llvm::Value *gen_ir();
+        virtual void dump(int) const;
+};
+
+class var_assign : public node {
+    protected:
+        std::string name;
+        std::list<expr *> idxs;
+    public:
+        var_assign(const std::string &);
+        ~var_assign();
         void add_idx(expr *);
         virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
@@ -325,10 +343,11 @@ class compound_stmt : public stmt {
 
 class assign_stmt : public stmt {
     protected:
-        var_access *var;
+        var_assign *var;
         expr *expression;
     public:
-        assign_stmt(var_access *, expr *);
+        assign_stmt(var_assign *, expr *);
+        llvm::Value *gen_ir();
         virtual ~assign_stmt();
         virtual void dump(int) const;
 };
@@ -343,6 +362,7 @@ class if_stmt : public stmt {
     public:
         if_stmt(expr *, stmt *, stmt *);
         virtual ~if_stmt();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -375,10 +395,11 @@ class exit_stmt : public stmt {
 
 class readln_stmt : public stmt {
     protected:
-        var_access *var;
+        var_assign *var;
     public:
-        readln_stmt(var_access *);
+        readln_stmt(var_assign *);
         virtual ~readln_stmt();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -388,6 +409,7 @@ class write_stmt : public stmt {
     public:
         write_stmt(expr *);
         virtual ~write_stmt();
+        virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 

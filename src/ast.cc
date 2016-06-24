@@ -24,7 +24,12 @@ static llvm::LLVMContext context;
 static llvm::IRBuilder<> builder{context};
 static std::unique_ptr<llvm::Module> module;
 static std::map<std::string, llvm::AllocaInst *> named_vals;
+static std::map<std::string, llvm::AllocaInst *> const_vals;
 static std::unique_ptr<llvm::orc::KaleidoscopeJIT> jit;
+
+llvm::Function *scanln_fun;
+llvm::Function *println_fun;
+llvm::Function *print_fun;
 
 /*
  * abstract node class
@@ -33,7 +38,7 @@ node::~node() {}
 
 void node::print_spaces(int spaces) const {
     for (auto i = 0; i < spaces; ++i)
-        std::cout << " " << std::endl;
+        std::cout << " ";
 }
 
 /*
@@ -48,6 +53,12 @@ void decl::add_type(std::shared_ptr<type> t) {}
  */
 decl_list::decl_list(decl *d, decl_list *l)
     : declaration{d}, next{l} {}
+
+llvm::Value *decl_list::gen_ir() {
+    auto d = declaration->gen_ir();
+    next->gen_ir();
+    return d;
+}
 
 decl_list::~decl_list() {
     delete declaration;
@@ -65,6 +76,10 @@ void decl_list::dump(int s) const {
  * null_decl_list class
  */
 null_decl_list::null_decl_list() : decl_list{nullptr, nullptr} {}
+
+llvm::Value *null_decl_list::gen_ir() {
+    return nullptr;
+}
 
 void null_decl_list::dump(int s) const {
     print_spaces(s);
@@ -99,10 +114,8 @@ block::~block() {
 }
 
 llvm::Value *block::gen_ir() {
-    auto basic_block = llvm::BasicBlock::Create(context, "block");
-    builder.SetInsertPoint(basic_block);
-    body->gen_ir();
-    return basic_block;
+    decls->gen_ir();
+    return body->gen_ir();
 }
 
 void block::dump(int s) const {
@@ -130,7 +143,7 @@ binary_expr::~binary_expr() {
 /*
  * eq_expr class
  */
-eq_expr::eq_expr(expr *l, expr *r) : binary_expr{r, l} {}
+eq_expr::eq_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *eq_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -150,7 +163,7 @@ void eq_expr::dump(int s) const {
 /*
  * ne_expr class
  */
-ne_expr::ne_expr(expr *l, expr *r) : binary_expr{r, l} {}
+ne_expr::ne_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *ne_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -170,7 +183,7 @@ void ne_expr::dump(int s) const {
 /*
  * lt_expr class
  */
-lt_expr::lt_expr(expr *l, expr *r) : binary_expr{r, l} {}
+lt_expr::lt_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *lt_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -190,7 +203,7 @@ void lt_expr::dump(int s) const {
 /*
  * gt_expr class
  */
-gt_expr::gt_expr(expr *l, expr *r) : binary_expr{r, l} {}
+gt_expr::gt_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *gt_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -210,7 +223,7 @@ void gt_expr::dump(int s) const {
 /*
  * le_expr class
  */
-le_expr::le_expr(expr *l, expr *r) : binary_expr{r, l} {}
+le_expr::le_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *le_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -230,7 +243,7 @@ void le_expr::dump(int s) const {
 /*
  * ge_expr class
  */
-ge_expr::ge_expr(expr *l, expr *r) : binary_expr{r, l} {}
+ge_expr::ge_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *ge_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -250,7 +263,7 @@ void ge_expr::dump(int s) const {
 /*
  * add_expr class
  */
-add_expr::add_expr(expr *l, expr *r) : binary_expr{r, l} {}
+add_expr::add_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *add_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -270,14 +283,14 @@ void add_expr::dump(int s) const {
 /*
  * sub_expr class
  */
-sub_expr::sub_expr(expr *l, expr *r) : binary_expr{r, l} {}
+sub_expr::sub_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *sub_expr::gen_ir() {
     auto l = left->gen_ir();
     auto r = right->gen_ir();
     if (l == nullptr || r == nullptr)
         return nullptr;
-    return builder.CreateSub(l, r, "sub");
+    return builder.CreateNSWSub(l, r, "sub");
 }
 
 void sub_expr::dump(int s) const {
@@ -290,7 +303,7 @@ void sub_expr::dump(int s) const {
 /*
  * or_expr class
  */
-or_expr::or_expr(expr *l, expr *r) : binary_expr{r, l} {}
+or_expr::or_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *or_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -310,7 +323,7 @@ void or_expr::dump(int s) const {
 /*
  * mul_expr class
  */
-mul_expr::mul_expr(expr *l, expr *r) : binary_expr{r, l} {}
+mul_expr::mul_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *mul_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -330,7 +343,7 @@ void mul_expr::dump(int s) const {
 /*
  * div_expr class
  */
-div_expr::div_expr(expr *l, expr *r) : binary_expr{r, l} {}
+div_expr::div_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *div_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -350,7 +363,7 @@ void div_expr::dump(int s) const {
 /*
  * mod_expr class
  */
-mod_expr::mod_expr(expr *l, expr *r) : binary_expr{r, l} {}
+mod_expr::mod_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *mod_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -370,7 +383,7 @@ void mod_expr::dump(int s) const {
 /*
  * and_expr class
  */
-and_expr::and_expr(expr *l, expr *r) : binary_expr{r, l} {}
+and_expr::and_expr(expr *l, expr *r) : binary_expr{l, r} {}
 
 llvm::Value *and_expr::gen_ir() {
     auto l = left->gen_ir();
@@ -411,6 +424,9 @@ unary_expr::~unary_expr() {
     delete child;
 }
 
+/*
+ * minus_expr class
+ */
 minus_expr::minus_expr(expr *c) : unary_expr{c} {}
 
 void minus_expr::dump(int s) const {
@@ -419,6 +435,16 @@ void minus_expr::dump(int s) const {
     child->dump(s + 4);
 }
 
+llvm::Value *minus_expr::gen_ir() {
+    auto c = child->gen_ir();
+    if (c == nullptr)
+        return nullptr;
+    return builder.CreateNeg(c, "minus");
+}
+
+/*
+ * not_expr
+ */
 not_expr::not_expr(expr *c) : unary_expr{c} {}
 
 void not_expr::dump(int s) const {
@@ -447,15 +473,40 @@ void var_access::add_idx(expr *e) {
 }
 
 llvm::Value *var_access::gen_ir() {
-    auto v = named_vals[name];
+    llvm::Value *v = const_vals[name];
     if (v == nullptr)
         return nullptr;
-    return v;
+    return builder.CreateLoad(v, name.c_str());
 }
 
 void var_access::dump(int s) const {
     print_spaces(s);
     std::cout << "var_access name: " << name << std::endl;
+    for (auto e : idxs)
+        e->dump(s + 4);
+}
+
+/*
+ * var_assign class
+ */
+var_assign::var_assign(const std::string &n) : name{n} {}
+
+var_assign::~var_assign() {
+    for (auto e : idxs)
+        delete e;
+}
+
+void var_assign::add_idx(expr *e) {
+    idxs.push_back(e);
+}
+
+llvm::Value *var_assign::gen_ir() {
+    return named_vals[name];
+}
+
+void var_assign::dump(int s) const {
+    print_spaces(s);
+    std::cout << "var_assign name: " << name << std::endl;
     for (auto e : idxs)
         e->dump(s + 4);
 }
@@ -496,7 +547,7 @@ stmt_list::~stmt_list() {
 
 llvm::Value *stmt_list::gen_ir() {
     auto s = statement->gen_ir();
-    /* TODO gen_ir next */
+    next->gen_ir();
     return s;
 }
 
@@ -512,6 +563,9 @@ void stmt_list::dump(int s) const {
  */
 null_stmt_list::null_stmt_list() : stmt_list{nullptr, nullptr} {}
 
+llvm::Value *null_stmt_list::gen_ir() {
+    return nullptr;
+}
 void null_stmt_list::dump(int s) const {
     print_spaces(s);
     std::cout << "null_stmt_list" << std::endl;
@@ -521,6 +575,16 @@ void null_stmt_list::dump(int s) const {
  * const_decl class
  */
 const_decl::const_decl(const std::string& n, int v) : name{n}, val{v} {}
+
+llvm::Value *const_decl::gen_ir() {
+    if (const_vals.count(name) != 0)
+        return nullptr;
+    auto a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), 0, name.c_str());
+    const_vals[name] = a;
+    auto v = llvm::ConstantInt::getSigned(llvm::IntegerType::getInt64Ty(context), val);
+    builder.CreateStore(v, a);
+    return a;
+}
 
 void const_decl::dump(int s) const {
     print_spaces(s);
@@ -534,6 +598,16 @@ var_decl::var_decl(const std::string& n) : name{n}, var_type{nullptr} {}
 
 void var_decl::add_type(std::shared_ptr<type> t) {
     var_type = t;
+}
+
+/* TODO add arrays */
+llvm::Value *var_decl::gen_ir() {
+    if (named_vals.count(name) != 0)
+        return nullptr;
+    auto a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), 0, name.c_str());
+    named_vals[name] = a;
+    const_vals[name] = a;
+    return a;
 }
 
 void var_decl::dump(int s) const {
@@ -595,11 +669,22 @@ void compound_stmt::dump(int s) const {
 /*
  * assign_stmt class
  */
-assign_stmt::assign_stmt(var_access *v , expr *e) : var{v}, expression{e} {}
+assign_stmt::assign_stmt(var_assign *v , expr *e) : var{v}, expression{e} {}
 
 assign_stmt::~assign_stmt() {
     delete var;
     delete expression;
+}
+
+llvm::Value *assign_stmt::gen_ir() {
+    auto v = var->gen_ir();
+    if (v == nullptr)
+        return nullptr;
+    auto e = expression->gen_ir();
+    if (e == nullptr)
+        return nullptr;
+    builder.CreateStore(e, v);
+    return e;
 }
 
 void assign_stmt::dump(int s) const {
@@ -619,6 +704,40 @@ if_stmt::~if_stmt() {
     delete condition;
     delete then_stmt;
     delete else_stmt;
+}
+
+llvm::Value *if_stmt::gen_ir() {
+    auto c = condition->gen_ir();
+    if (c == nullptr)
+        return nullptr;
+    
+    auto fun = builder.GetInsertBlock()->getParent();
+    auto then_bb = llvm::BasicBlock::Create(context, "then", fun);
+    auto else_bb = llvm::BasicBlock::Create(context, "else");
+    auto con_bb = llvm::BasicBlock::Create(context, "ifcon");
+
+    builder.CreateCondBr(c, then_bb, else_bb);
+
+    builder.SetInsertPoint(then_bb);
+    auto t = then_stmt->gen_ir();
+    if (t == nullptr)
+        return nullptr;
+
+    builder.CreateBr(con_bb);
+    then_bb = builder.GetInsertBlock();
+
+    fun->getBasicBlockList().push_back(else_bb);
+    builder.SetInsertPoint(else_bb);
+
+    else_stmt->gen_ir();
+
+    builder.CreateBr(con_bb);
+    else_bb = builder.GetInsertBlock();
+
+    fun->getBasicBlockList().push_back(con_bb);
+    builder.SetInsertPoint(con_bb);
+
+    return con_bb;
 }
 
 void if_stmt::dump(int s) const {
@@ -676,10 +795,27 @@ void exit_stmt::dump(int s) const {
 /*
  * readln_stmt class
  */
-readln_stmt::readln_stmt(var_access *v) : var{v} {}
+readln_stmt::readln_stmt(var_assign *v) : var{v} {}
 
 readln_stmt::~readln_stmt() {
     delete var;
+}
+
+extern "C" int64_t scanln() {
+    int64_t x;
+    scanf("%ld", &x);
+    return x;
+}
+
+llvm::Value *readln_stmt::gen_ir() {
+    auto v = var->gen_ir();
+    if (v == nullptr)
+        return nullptr;
+    auto c = builder.CreateCall(scanln_fun,
+            std::vector<llvm::Value *>{}, "scanln");
+    if (c == nullptr)
+        return nullptr;
+    return builder.CreateStore(c, v);
 }
 
 void readln_stmt::dump(int s) const {
@@ -694,6 +830,15 @@ void readln_stmt::dump(int s) const {
 write_stmt::write_stmt(expr *e) : expression{e} {}
 write_stmt::~write_stmt() {
     delete expression;
+}
+
+extern "C" void print(int64_t x) {
+    printf("%ld", x);
+}
+
+llvm::Value *write_stmt::gen_ir() {
+    return builder.CreateCall(print_fun,
+            std::vector<llvm::Value *>{expression->gen_ir()}, "");
 }
 
 void write_stmt::dump(int s) const {
@@ -711,17 +856,12 @@ writeln_stmt::~writeln_stmt() {
     delete expression;
 }
 
-extern "C" void writeln(long int x) {
+extern "C" void println(int64_t x) {
     printf("%ld\n", x);
 }
 
-llvm::Function *writeln_fun = llvm::Function::Create(
-        llvm::FunctionType::get(llvm::Type::getVoidTy(context),
-            std::vector<llvm::Type *>(1, llvm::Type::getInt64Ty(context)),
-            false), llvm::Function::ExternalLinkage, "writeln", module.get());
-
 llvm::Value *writeln_stmt::gen_ir() {
-    return builder.CreateCall(writeln_fun,
+    return builder.CreateCall(println_fun,
             std::vector<llvm::Value *>{expression->gen_ir()}, "");
 }
 
@@ -744,6 +884,23 @@ void null_stmt::dump(int s) const {
  *
  * TODO: add JIT
  */
+void define_base_func() {
+    scanln_fun = llvm::Function::Create(
+            llvm::FunctionType::get(llvm::Type::getInt64Ty(context),
+                std::vector<llvm::Type *>{},
+                false), llvm::Function::ExternalLinkage, "scanln", module.get());
+
+    println_fun = llvm::Function::Create(
+            llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+                std::vector<llvm::Type *>(1, llvm::Type::getInt64Ty(context)),
+                false), llvm::Function::ExternalLinkage, "println", module.get());
+
+    print_fun = llvm::Function::Create(
+            llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+                std::vector<llvm::Type *>(1, llvm::Type::getInt64Ty(context)),
+                false), llvm::Function::ExternalLinkage, "print", module.get());
+}
+
 int main(int argc, char **argv) {
     if (argc != 2) /* only 1 file to compile */
         return EXIT_FAILURE;
@@ -751,8 +908,11 @@ int main(int argc, char **argv) {
     if (in == nullptr) /* cannot opein file */
         return EXIT_FAILURE;
 
-    /* create AST */
     auto parser = yyParser{in};
+
+    /* create AST */
+    auto root = parser.yyparse();
+    root->dump(0);
 
     /* init objects */
     llvm::InitializeNativeTarget();
@@ -764,15 +924,18 @@ int main(int argc, char **argv) {
     module = llvm::make_unique<llvm::Module>("module", llvm::getGlobalContext());
     module->setDataLayout(jit->getTargetMachine().createDataLayout());
 
+    /* define writeln, write and readln */
+    define_base_func();
+
     auto fun_type = llvm::FunctionType::get(llvm::Type::getInt8Ty(context),
             std::vector<llvm::Type *>{}, false);
     auto fun = llvm::Function::Create(fun_type,
             llvm::Function::ExternalLinkage, "main", module.get());
 
     /* parse and generate LLVM IR */
-    auto root = parser.yyparse();
-    auto main_block = static_cast<llvm::BasicBlock *>(root->gen_ir());
-    main_block->insertInto(fun);
+    auto basic_block = llvm::BasicBlock::Create(context, "main_block", fun);
+    builder.SetInsertPoint(basic_block);
+    root->gen_ir();
     builder.CreateRet(llvm::ConstantInt::getSigned(
                 llvm::IntegerType::getInt8Ty(context), 0));
     verifyFunction(*fun);

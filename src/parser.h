@@ -47,7 +47,7 @@ class yyParser {
         ast::stmt_list *stmt_seq_0();
         ast::stmt *stmt();
         ast::stmt *assign_or_proc_stmt(const std::string &);
-        void var_assign(ast::var_access *);
+        void var_assign(ast::var_assign *);
         ast::while_stmt *while_stmt();
         ast::for_stmt *for_stmt();
         ast::if_stmt *if_stmt();

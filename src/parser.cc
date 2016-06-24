@@ -348,8 +348,8 @@ ast::stmt *yyParser::stmt() {
             match(LEX_LRBRAC);
             auto n = get_ident();
             match(LEX_IDENT);
-            auto v = new ast::var_access{n};
-            var_access(v);
+            auto v = new ast::var_assign{n};
+            var_assign(v);
             match(LEX_RRBRAC);
             return new ast::readln_stmt{v};
         }
@@ -382,7 +382,7 @@ ast::stmt *yyParser::assign_or_proc_stmt(const std::string& n) {
     switch (yylexsymb) {
         case LEX_LBRAC:
         case LEX_ASSIGN: {
-            auto v = new ast::var_access{n};
+            auto v = new ast::var_assign{n};
             var_assign(v);
             return new ast::assign_stmt{v, expr()};
         }
@@ -396,7 +396,7 @@ ast::stmt *yyParser::assign_or_proc_stmt(const std::string& n) {
     }
 }
 
-void yyParser::var_assign(ast::var_access *v) {
+void yyParser::var_assign(ast::var_assign *v) {
     switch (yylexsymb) {
         case LEX_LBRAC:
             yylexsymb = yylexer.yylex();

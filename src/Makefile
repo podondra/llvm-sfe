@@ -7,7 +7,7 @@ FLEXFLAGS= -Cfa --8bit --noyywrap --warn
 LLVMFLAGS = -I/home/podondra/pjp/llvm-3.8.0.src/include -I/home/podondra/pjp/llvm-obj/include  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-uninitialized -Wdelete-non-virtual-dtor -Wno-comment -std=c++11 -ffunction-sections -fdata-sections   -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 
 llvm_sfe: parser.o lexer.o ast.o 
-	$(LD) $^ -o llvm-sfe $(LDFLAGS)
+	$(LD) $^ -o llvm-sfe $(LDFLAGS) -rdynamic
 
 parser_test: ast.o parser.o parser_test.o lexer.o
 	$(LD) $(LDFLAGS) -o $@ $^
