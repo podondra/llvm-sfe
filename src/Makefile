@@ -1,5 +1,5 @@
 LD = clang++
-LDFLAGS = $(LLVMFLAGS) -L/home/podondra/pjp/llvm-obj/lib -lLLVMCore -lLLVMSupport -lrt -ldl -ltinfo -lpthread -lm
+LDFLAGS = $(LLVMFLAGS) -L/home/podondra/pjp/llvm-obj/lib -lLLVMX86Disassembler -lLLVMX86AsmParser -lLLVMX86CodeGen -lLLVMSelectionDAG -lLLVMAsmPrinter -lLLVMCodeGen -lLLVMScalarOpts -lLLVMInstCombine -lLLVMInstrumentation -lLLVMProfileData -lLLVMTransformUtils -lLLVMBitWriter -lLLVMX86Desc -lLLVMMCDisassembler -lLLVMX86Info -lLLVMX86AsmPrinter -lLLVMX86Utils -lLLVMMCJIT -lLLVMExecutionEngine -lLLVMTarget -lLLVMAnalysis -lLLVMRuntimeDyld -lLLVMObject -lLLVMMCParser -lLLVMBitReader -lLLVMMC -lLLVMCore -lLLVMSupport -lrt -ldl -ltinfo -lpthread -lm
 CXX = clang++
 CXXFLAGS = -std=c++11 -pedantic-errors -Wall -Wno-deprecated-register -g
 FLEX = flex++
