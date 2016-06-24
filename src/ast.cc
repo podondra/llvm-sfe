@@ -1,9 +1,20 @@
 #include <cstdio>
+#include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
+#include <cstdlib>
+#include <fstream>
+#include <stdexcept>
 #include "ast.h"
+#include "parser.h"
 
 using namespace ast;
+
+static llvm::LLVMContext context;
+static llvm::IRBuilder<> builder{context};
+static std::unique_ptr<llvm::Module> module;
+static std::map<std::string, llvm::AllocaInst *> named_vals;
 
 /* abstract node class */
 node::~node() {}
@@ -50,8 +61,6 @@ void var_decl_list::add_type(std::shared_ptr<type> t) {
     next->add_type(t);
 }
 
-var_decl_list::~var_decl_list() {}
-
 void var_decl_list::dump(int s) const {
     print_spaces(s);
     printf("var_decl_list\n");
@@ -67,6 +76,14 @@ block::~block() {
     delete body;
 }
 
+llvm::Value *block::gen_ir() {
+    auto basic_block = llvm::BasicBlock::Create(context, "block");
+    builder.SetInsertPoint(basic_block);
+    body->gen_ir();
+    builder.CreateRetVoid();
+    return basic_block;
+}
+
 void block::dump(int s) const {
     print_spaces(s);
     printf("block\n");
@@ -77,14 +94,25 @@ void block::dump(int s) const {
 /* expr class */
 expr::~expr() {}
 
+/* binary class */
 binary_expr::binary_expr(expr *l, expr *r) : left{l}, right{r} {}
+
 binary_expr::~binary_expr() {
     delete left;
     delete right;
 }
 
+/* eq_expr class */
 eq_expr::eq_expr(expr *l, expr *r) : binary_expr{r, l} {}
-eq_expr::~eq_expr() {}
+
+llvm::Value *eq_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpEQ(l, r, "eq");
+}
+
 void eq_expr::dump(int s) const {
     print_spaces(s);
     printf("\n");
@@ -92,8 +120,17 @@ void eq_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* ne_expr class */
 ne_expr::ne_expr(expr *l, expr *r) : binary_expr{r, l} {}
-ne_expr::~ne_expr() {}
+
+llvm::Value *ne_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpNE(l, r, "ne");
+}
+
 void ne_expr::dump(int s) const {
     print_spaces(s);
     printf("\n");
@@ -101,8 +138,17 @@ void ne_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* lt_expr class */
 lt_expr::lt_expr(expr *l, expr *r) : binary_expr{r, l} {}
-lt_expr::~lt_expr() {}
+
+llvm::Value *lt_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpSLT(l, r, "lt");
+}
+
 void lt_expr::dump(int s) const {
     print_spaces(s);
     printf("lt_expr\n");
@@ -110,8 +156,17 @@ void lt_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* gt_expr class */
 gt_expr::gt_expr(expr *l, expr *r) : binary_expr{r, l} {}
-gt_expr::~gt_expr() {}
+
+llvm::Value *gt_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpSGT(l, r, "gt");
+}
+
 void gt_expr::dump(int s) const {
     print_spaces(s);
     printf("gt_expr\n");
@@ -119,8 +174,17 @@ void gt_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* le_expr class */
 le_expr::le_expr(expr *l, expr *r) : binary_expr{r, l} {}
-le_expr::~le_expr() {}
+
+llvm::Value *le_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpSLE(l, r, "le");
+}
+
 void le_expr::dump(int s) const {
     print_spaces(s);
     printf("le_expr\n");
@@ -128,8 +192,17 @@ void le_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* ge_expr class */
 ge_expr::ge_expr(expr *l, expr *r) : binary_expr{r, l} {}
-ge_expr::~ge_expr() {}
+
+llvm::Value *ge_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateICmpSGE(l, r, "ge");
+}
+
 void ge_expr::dump(int s) const {
     print_spaces(s);
     printf("ge_expr\n");
@@ -137,8 +210,17 @@ void ge_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* add_expr class */
 add_expr::add_expr(expr *l, expr *r) : binary_expr{r, l} {}
-add_expr::~add_expr() {}
+
+llvm::Value *add_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateAdd(l, r, "add");
+}
+
 void add_expr::dump(int s) const {
     print_spaces(s);
     printf("add_expr\n");
@@ -146,8 +228,17 @@ void add_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* sub_expr class */
 sub_expr::sub_expr(expr *l, expr *r) : binary_expr{r, l} {}
-sub_expr::~sub_expr() {}
+
+llvm::Value *sub_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateSub(l, r, "add");
+}
+
 void sub_expr::dump(int s) const {
     print_spaces(s);
     printf("sub_expr\n");
@@ -155,8 +246,17 @@ void sub_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* or_expr class */
 or_expr::or_expr(expr *l, expr *r) : binary_expr{r, l} {}
-or_expr::~or_expr() {}
+
+llvm::Value *or_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateOr(l, r, "or");
+}
+
 void or_expr::dump(int s) const {
     print_spaces(s);
     printf("or_expr\n");
@@ -164,8 +264,17 @@ void or_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* mul_expr class */
 mul_expr::mul_expr(expr *l, expr *r) : binary_expr{r, l} {}
-mul_expr::~mul_expr() {}
+
+llvm::Value *mul_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateMul(l, r, "mul");
+}
+
 void mul_expr::dump(int s) const {
     print_spaces(s);
     printf("mul_expr\n");
@@ -173,8 +282,17 @@ void mul_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* div_expr class */
 div_expr::div_expr(expr *l, expr *r) : binary_expr{r, l} {}
-div_expr::~div_expr() {}
+
+llvm::Value *div_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateSDiv(l, r, "div");
+}
+
 void div_expr::dump(int s) const {
     print_spaces(s);
     printf("div_expr\n");
@@ -182,8 +300,17 @@ void div_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* mod_expr class */
 mod_expr::mod_expr(expr *l, expr *r) : binary_expr{r, l} {}
-mod_expr::~mod_expr() {}
+
+llvm::Value *mod_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateSRem(l, r, "mod");
+}
+
 void mod_expr::dump(int s) const {
     print_spaces(s);
     printf("mod_expr\n");
@@ -191,8 +318,17 @@ void mod_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* and_expr class */
 and_expr::and_expr(expr *l, expr *r) : binary_expr{r, l} {}
-and_expr::~and_expr() {}
+
+llvm::Value *and_expr::gen_ir() {
+    auto l = left->gen_ir();
+    auto r = right->gen_ir();
+    if (l == nullptr || r == nullptr)
+        return nullptr;
+    return builder.CreateAnd(l, r, "and");
+}
+
 void and_expr::dump(int s) const {
     print_spaces(s);
     printf("and_expr\n");
@@ -200,8 +336,13 @@ void and_expr::dump(int s) const {
     right->dump(s + 4);
 }
 
+/* exp_expr class */
 exp_expr::exp_expr(expr *b, expr *e) : binary_expr{b, e} {}
-exp_expr::~exp_expr() {}
+
+llvm::Value *exp_expr::gen_ir() {
+    return nullptr;
+}
+
 void exp_expr::dump(int s) const {
     print_spaces(s);
     printf("exp_expr\n");
@@ -216,7 +357,7 @@ unary_expr::~unary_expr() {
 }
 
 minus_expr::minus_expr(expr *c) : unary_expr{c} {}
-minus_expr::~minus_expr() {}
+
 void minus_expr::dump(int s) const {
     print_spaces(s);
     printf("minus_expr\n");
@@ -224,7 +365,7 @@ void minus_expr::dump(int s) const {
 }
 
 not_expr::not_expr(expr *c) : unary_expr{c} {}
-not_expr::~not_expr() {}
+
 void not_expr::dump(int s) const {
     print_spaces(s);
     printf("not_expr\n");
@@ -248,6 +389,13 @@ void var_access::add_idx(expr *e) {
     idxs.push_back(e);
 }
 
+llvm::Value *var_access::gen_ir() {
+    auto v = named_vals[name];
+    if (v == nullptr)
+        return nullptr;
+    return v;
+}
+
 void var_access::dump(int s) const {
     print_spaces(s);
     printf("var_access name: '%s'\n", name.c_str());
@@ -258,9 +406,13 @@ void var_access::dump(int s) const {
 /* numb class */
 numb::numb(long int v) : val{v} {}
 
+llvm::Value *numb::gen_ir() {
+    return llvm::ConstantInt::getSigned(llvm::IntegerType::getInt64Ty(context), val);
+}
+
 void numb::dump(int s) const {
     print_spaces(s);
-    printf("numb val: %ld\n", val);
+    std::cout << "numb: " << val << std::endl;
 }
 
 /* stmt class */
@@ -277,6 +429,12 @@ stmt_list::stmt_list(stmt* s, stmt_list* l) : statement{s}, next{l} {}
 stmt_list::~stmt_list() {
     delete statement;
     delete next;
+}
+
+llvm::Value *stmt_list::gen_ir() {
+    auto s = statement->gen_ir();
+    /* TODO gen_ir next */
+    return s;
 }
 
 void stmt_list::dump(int s) const {
@@ -297,8 +455,6 @@ void null_stmt_list::dump(int s) const {
 /* const_decl class */
 const_decl::const_decl(const std::string& n, int v) : name{n}, val{v} {}
 
-const_decl::~const_decl() {}
-
 void const_decl::dump(int s) const {
     print_spaces(s);
     printf("const_decl name: '%s' val: %d\n", name.c_str(), val);
@@ -306,8 +462,6 @@ void const_decl::dump(int s) const {
 
 /* var_decl class */
 var_decl::var_decl(const std::string& n) : name{n}, var_type{nullptr} {}
-
-var_decl::~var_decl() {}
 
 void var_decl::add_type(std::shared_ptr<type> t) {
     var_type = t;
@@ -322,17 +476,13 @@ void var_decl::dump(int s) const {
 /* type class */
 type::~type() {}
 
-/* type class */
-int_type::~int_type() {}
-
+/* int_type class */
 void int_type::dump(int s) const {
     print_spaces(s);
     printf("int_type\n");
 }
 
-/* type class */
-array_type::~array_type() {}
-
+/* array_type class */
 void array_type::dump(int s) const {
     print_spaces(s);
     printf("array_type\n");
@@ -349,6 +499,10 @@ compound_stmt::compound_stmt(stmt_list *l) : list{l} {}
 
 compound_stmt::~compound_stmt() {
     delete list;
+}
+
+llvm::Value *compound_stmt::gen_ir() {
+    return list->gen_ir();
 }
 
 void compound_stmt::dump(int s) const {
@@ -441,7 +595,7 @@ void readln_stmt::dump(int s) const {
     var->dump(s + 4);
 }
 
-/* write class */
+/* write_stmt class */
 write_stmt::write_stmt(expr *e) : expression{e} {}
 write_stmt::~write_stmt() {
     delete expression;
@@ -455,8 +609,24 @@ void write_stmt::dump(int s) const {
 
 /* writeln_stmt class */
 writeln_stmt::writeln_stmt(expr *e) : expression{e} {}
+
 writeln_stmt::~writeln_stmt() {
     delete expression;
+}
+
+extern "C" void writeln(long int x) {
+    printf("%ld\n", x);
+}
+
+llvm::Function *writeln_fun = llvm::Function::Create(
+        llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+            std::vector<llvm::Type *>(1, llvm::Type::getInt64Ty(context)),
+            false), llvm::Function::ExternalLinkage, "writeln", module.get());
+
+llvm::Value *writeln_stmt::gen_ir() {
+    return builder.CreateCall(writeln_fun,
+            std::vector<llvm::Value *>{expression->gen_ir()},
+            "");
 }
 
 void writeln_stmt::dump(int s) const {
@@ -466,9 +636,36 @@ void writeln_stmt::dump(int s) const {
 }
 
 /* null_stmt class */
-null_stmt::~null_stmt() {}
-
 void null_stmt::dump(int s) const {
     print_spaces(s);
     printf("null_stmt\n");
+}
+
+int main(int argc, char **argv) {
+    if (argc != 2) /* only 1 file to compile */
+        return EXIT_FAILURE;
+    auto in = new std::ifstream{argv[1]};
+    if (in == nullptr) /* cannot opein file */
+        return EXIT_FAILURE;
+
+    auto parser = yyParser{in};
+
+    module = llvm::make_unique<llvm::Module>("module", context);
+
+    auto fun_type = llvm::FunctionType::get(llvm::Type::getVoidTy(context),
+            std::vector<llvm::Type *>{}, false);
+    auto fun = llvm::Function::Create(fun_type,
+            llvm::Function::ExternalLinkage, "main", module.get());
+
+    auto root = parser.yyparse();
+    auto main_block = static_cast<llvm::BasicBlock *>(root->gen_ir());
+    main_block->insertInto(fun);
+
+    verifyFunction(*fun);
+
+    module->dump(); /* print generated llvm ir */
+
+    delete root;
+    delete in;
+    return EXIT_SUCCESS;
 }
