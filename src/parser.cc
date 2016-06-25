@@ -174,16 +174,17 @@ std::shared_ptr<ast::type> yyParser::type() {
         case LEX_INT:
             yylexsymb = yylexer.yylex();
             return std::make_shared<ast::int_type>();
-        case LEX_ARRAY: /* TODO */
+        case LEX_ARRAY: {
             yylexsymb = yylexer.yylex();
             match(LEX_LBRAC);
-            constant();
+            auto f = constant();
             match(LEX_DOTDOT);
-            constant();
+            auto t = constant();
             match(LEX_RBRAC);
             match(LEX_OF);
             match(LEX_INT);
-            return std::make_shared<ast::array_type>();
+            return std::make_shared<ast::array_type>(f, t);
+        }
         default:
             std::cout << "type error" << std::endl;
             return nullptr;

@@ -12,6 +12,9 @@ namespace ast {
 const int DIR_TO = 1;
 const int DIR_DOWNTO = -1;
 
+const int TYPE_INT = 1;
+const int TYPE_ARR = 2;
+
 /* 
  * node abstract class
  * Base class for all nodes of AST.
@@ -31,19 +34,25 @@ class node {
 class type : public node {
     public:
         virtual ~type();
+        virtual int get_type() const = 0;
+        virtual int get_size() const = 0;
+        virtual llvm::Value *gen_ir();
 };
 
 class int_type : public type {
     public:
-        /* TODO */
-        virtual llvm::Value *gen_ir() { return nullptr; }
+        virtual int get_type() const;
+        virtual int get_size() const;
         virtual void dump(int) const;
 };
 
 class array_type : public type {
+    protected:
+        int from, to;
     public:
-        /* TODO */
-        virtual llvm::Value *gen_ir() { return nullptr; }
+        array_type(int, int);
+        virtual int get_type() const;
+        virtual int get_size() const;
         virtual void dump(int) const;
 };
 

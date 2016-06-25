@@ -474,8 +474,6 @@ void var_access::add_idx(expr *e) {
 
 llvm::Value *var_access::gen_ir() {
     llvm::Value *v = const_vals[name];
-    if (v == nullptr)
-        return nullptr;
     return builder.CreateLoad(v, name.c_str());
 }
 
@@ -588,7 +586,7 @@ llvm::Value *const_decl::gen_ir() {
 
 void const_decl::dump(int s) const {
     print_spaces(s);
-    std::cout << "const_decl name: " << name << "val: " << val << std::endl;
+    std::cout << "const_decl name: " << name << " val: " << val << std::endl;
 }
 
 /*
@@ -600,11 +598,16 @@ void var_decl::add_type(std::shared_ptr<type> t) {
     var_type = t;
 }
 
-/* TODO add arrays */
 llvm::Value *var_decl::gen_ir() {
-    if (named_vals.count(name) != 0)
-        return nullptr;
-    auto a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), 0, name.c_str());
+    named_vals.count(name);
+    llvm::AllocaInst *a;
+    if (var_type->get_type() == TYPE_INT)
+        a = builder.CreateAlloca(llvm::Type::getInt64Ty(context),
+                nullptr, name.c_str());
+    else if (var_type->get_type() == TYPE_ARR)
+        a = builder.CreateAlloca(llvm::ArrayType::get(
+                    llvm::Type::getInt64Ty(context), var_type->get_size()
+                    ), nullptr, name.c_str());
     named_vals[name] = a;
     const_vals[name] = a;
     return a;
@@ -621,9 +624,19 @@ void var_decl::dump(int s) const {
  */
 type::~type() {}
 
+llvm::Value *type::gen_ir() { return nullptr; }
+
 /*
  * int_type class
  */
+int int_type::get_type() const {
+    return TYPE_INT;
+}
+
+int int_type::get_size() const {
+    return 0;
+}
+
 void int_type::dump(int s) const {
     print_spaces(s);
     std::cout << "int_type" << std::endl;
@@ -632,6 +645,16 @@ void int_type::dump(int s) const {
 /*
  * array_type class
  */
+array_type::array_type(int f, int t) : from{f}, to{t} {}
+
+int array_type::get_type() const {
+    return TYPE_ARR;
+}
+
+int array_type::get_size() const {
+    return to + 1;
+}
+
 void array_type::dump(int s) const {
     print_spaces(s);
     std::cout << "array_type" << std::endl;
@@ -678,11 +701,7 @@ assign_stmt::~assign_stmt() {
 
 llvm::Value *assign_stmt::gen_ir() {
     auto v = var->gen_ir();
-    if (v == nullptr)
-        return nullptr;
     auto e = expression->gen_ir();
-    if (e == nullptr)
-        return nullptr;
     builder.CreateStore(e, v);
     return e;
 }
@@ -708,9 +727,6 @@ if_stmt::~if_stmt() {
 
 llvm::Value *if_stmt::gen_ir() {
     auto c = condition->gen_ir();
-    if (c == nullptr)
-        return nullptr;
-    
     auto fun = builder.GetInsertBlock()->getParent();
     auto then_bb = llvm::BasicBlock::Create(context, "then", fun);
     auto else_bb = llvm::BasicBlock::Create(context, "else");
@@ -719,20 +735,13 @@ llvm::Value *if_stmt::gen_ir() {
     builder.CreateCondBr(c, then_bb, else_bb);
 
     builder.SetInsertPoint(then_bb);
-    auto t = then_stmt->gen_ir();
-    if (t == nullptr)
-        return nullptr;
-
+    then_stmt->gen_ir();
     builder.CreateBr(con_bb);
-    then_bb = builder.GetInsertBlock();
 
     fun->getBasicBlockList().push_back(else_bb);
     builder.SetInsertPoint(else_bb);
-
     else_stmt->gen_ir();
-
     builder.CreateBr(con_bb);
-    else_bb = builder.GetInsertBlock();
 
     fun->getBasicBlockList().push_back(con_bb);
     builder.SetInsertPoint(con_bb);
@@ -762,23 +771,21 @@ llvm::Value *while_stmt::gen_ir() {
 
     auto cond = llvm::BasicBlock::Create(context, "cond", fun);
     auto loop = llvm::BasicBlock::Create(context, "loop", fun);
-    auto after = llvm::BasicBlock::Create(context, "after", fun);
+    auto after = llvm::BasicBlock::Create(context, "after");
+
     builder.CreateBr(cond);
     builder.SetInsertPoint(cond);
     auto c = condition->gen_ir();
-    if (c == nullptr)
-        return nullptr;
-
     builder.CreateCondBr(c, loop, after);
 
     builder.SetInsertPoint(loop);
-    if (body->gen_ir() == nullptr)
-        return nullptr;
+    body->gen_ir();
     builder.CreateBr(cond);
 
+    fun->getBasicBlockList().push_back(after);
     builder.SetInsertPoint(after);
 
-    return nullptr;
+    return after;
 }
 void while_stmt::dump(int s) const {
     print_spaces(s);
@@ -804,45 +811,43 @@ llvm::Value *for_stmt::gen_ir() {
 
     auto v = named_vals[name];
     auto f = from->gen_ir();
-    if (f == nullptr)
-        return nullptr;
-
     builder.CreateStore(f, v);
+
     auto cond = llvm::BasicBlock::Create(context, "cond", fun);
     auto loop = llvm::BasicBlock::Create(context, "loop", fun);
-    auto after = llvm::BasicBlock::Create(context, "after", fun);
+    auto after = llvm::BasicBlock::Create(context, "after");
     builder.CreateBr(cond);
+
     builder.SetInsertPoint(cond);
 
     auto cur_val = builder.CreateLoad(v, name.c_str());
     auto step = llvm::ConstantInt::getSigned(
             llvm::IntegerType::getInt64Ty(context), dir);
     auto t = to->gen_ir();
-    if (t == nullptr)
-        return nullptr;
     if (dir == DIR_TO)
         t = builder.CreateICmpSLE(cur_val, t, "le");
     else
         t = builder.CreateICmpSGE(cur_val, t, "ge");
+
     builder.CreateCondBr(t, loop, after);
 
     builder.SetInsertPoint(loop);
-    if (body->gen_ir() == nullptr)
-        return nullptr;
+    body->gen_ir();
 
     cur_val = builder.CreateLoad(v, name.c_str());
     auto next_val = builder.CreateAdd(cur_val, step, "nextval");
     builder.CreateStore(next_val, v);
     builder.CreateBr(cond);
 
+    fun->getBasicBlockList().push_back(after);
     builder.SetInsertPoint(after);
 
-    return nullptr;
+    return after;
 }
 
 void for_stmt::dump(int s) const {
     print_spaces(s);
-    std::cout << "for_stmt name: " << name << "dir: " << dir << std::endl;
+    std::cout << "for_stmt name: " << name << " dir: " << dir << std::endl;
     from->dump(s + 4);
     to->dump(s + 4);
     body->dump(s + 4);
@@ -868,8 +873,6 @@ dec_stmt::~dec_stmt() {
 
 llvm::Value *dec_stmt::gen_ir() {
     auto v = var->gen_ir();
-    if (v == nullptr)
-        return nullptr;
     auto c = builder.CreateLoad(v, "dec");
     auto n = builder.CreateAdd(c, llvm::ConstantInt::getSigned(
                 llvm::IntegerType::getInt64Ty(context), -1), "dec");
@@ -894,8 +897,6 @@ inc_stmt::~inc_stmt() {
 
 llvm::Value *inc_stmt::gen_ir() {
     auto v = var->gen_ir();
-    if (v == nullptr)
-        return nullptr;
     auto c = builder.CreateLoad(v, "inc");
     auto n = builder.CreateAdd(c, llvm::ConstantInt::getSigned(
                 llvm::IntegerType::getInt64Ty(context), 1), "inc");
@@ -926,12 +927,8 @@ extern "C" int64_t scanln() {
 
 llvm::Value *readln_stmt::gen_ir() {
     auto v = var->gen_ir();
-    if (v == nullptr)
-        return nullptr;
     auto c = builder.CreateCall(scanln_fun,
             std::vector<llvm::Value *>{}, "scanln");
-    if (c == nullptr)
-        return nullptr;
     return builder.CreateStore(c, v);
 }
 
@@ -1029,6 +1026,7 @@ int main(int argc, char **argv) {
 
     /* create AST */
     auto root = parser.yyparse();
+    root->dump(0);
 
     /* init objects */
     llvm::InitializeNativeTarget();
