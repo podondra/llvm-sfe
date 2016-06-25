@@ -1,10 +1,11 @@
 program print;
 
+var I : integer;
+
 begin
-    if 2 = 0 then
-        writeln(1)
-    else
-        writeln(2);
-    if 1 = 1 then
-        writeln(1);
+    I := 0;
+    while I < 10 do begin
+        writeln(I);
+        I := I + 1;
+    end;
 end.

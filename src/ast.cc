@@ -757,6 +757,29 @@ while_stmt::~while_stmt() {
     delete body;
 }
 
+llvm::Value *while_stmt::gen_ir() {
+    auto fun = builder.GetInsertBlock()->getParent();
+
+    auto cond = llvm::BasicBlock::Create(context, "cond", fun);
+    auto loop = llvm::BasicBlock::Create(context, "loop", fun);
+    auto after = llvm::BasicBlock::Create(context, "after", fun);
+    builder.CreateBr(cond);
+    builder.SetInsertPoint(cond);
+    auto c = condition->gen_ir();
+    if (c == nullptr)
+        return nullptr;
+
+    builder.CreateCondBr(c, loop, after);
+
+    builder.SetInsertPoint(loop);
+    if (body->gen_ir() == nullptr)
+        return nullptr;
+    builder.CreateBr(cond);
+
+    builder.SetInsertPoint(after);
+
+    return nullptr;
+}
 void while_stmt::dump(int s) const {
     print_spaces(s);
     std::cout << "while_stmt" << std::endl;
@@ -774,6 +797,47 @@ for_stmt::~for_stmt() {
     delete from;
     delete to;
     delete body;
+}
+
+llvm::Value *for_stmt::gen_ir() {
+    auto fun = builder.GetInsertBlock()->getParent();
+
+    auto v = named_vals[name];
+    auto f = from->gen_ir();
+    if (f == nullptr)
+        return nullptr;
+
+    builder.CreateStore(f, v);
+    auto cond = llvm::BasicBlock::Create(context, "cond", fun);
+    auto loop = llvm::BasicBlock::Create(context, "loop", fun);
+    auto after = llvm::BasicBlock::Create(context, "after", fun);
+    builder.CreateBr(cond);
+    builder.SetInsertPoint(cond);
+
+    auto cur_val = builder.CreateLoad(v, name.c_str());
+    auto step = llvm::ConstantInt::getSigned(
+            llvm::IntegerType::getInt64Ty(context), dir);
+    auto t = to->gen_ir();
+    if (t == nullptr)
+        return nullptr;
+    if (dir == DIR_TO)
+        t = builder.CreateICmpSLE(cur_val, t, "le");
+    else
+        t = builder.CreateICmpSGE(cur_val, t, "ge");
+    builder.CreateCondBr(t, loop, after);
+
+    builder.SetInsertPoint(loop);
+    if (body->gen_ir() == nullptr)
+        return nullptr;
+
+    cur_val = builder.CreateLoad(v, name.c_str());
+    auto next_val = builder.CreateAdd(cur_val, step, "nextval");
+    builder.CreateStore(next_val, v);
+    builder.CreateBr(cond);
+
+    builder.SetInsertPoint(after);
+
+    return nullptr;
 }
 
 void for_stmt::dump(int s) const {

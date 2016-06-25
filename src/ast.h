@@ -9,8 +9,8 @@
 
 namespace ast {
 
-const int DIR_TO = 0;
-const int DIR_DOWNTO = 1;
+const int DIR_TO = 1;
+const int DIR_DOWNTO = -1;
 
 /* 
  * node abstract class
@@ -373,6 +373,7 @@ class while_stmt : public stmt {
     public:
         while_stmt(expr *, stmt *);
         virtual ~while_stmt();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
@@ -385,6 +386,7 @@ class for_stmt : public stmt {
     public:
         for_stmt(const std::string &, expr *, int, expr *, stmt *);
         virtual ~for_stmt();
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
