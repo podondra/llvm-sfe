@@ -5,7 +5,7 @@ var J : integer;
 
 begin
     I := 0;
-    if I = 0 then begin
+    while I < 10 do begin
         for J := 0 to 10 do begin
             writeln(I);
         end;
