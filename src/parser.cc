@@ -233,77 +233,85 @@ void yyParser::proc_decl_1() {
     }
 }
 
-ast::decl_list *yyParser::func_decl() {
+ast::decl *yyParser::func_decl() {
     match(LEX_FUNC);
+    auto n = get_ident();
     match(LEX_IDENT);
-    func_decl_0();
+    auto f = func_decl_0(n);
     match(LEX_SEMICOLON);
-    return new ast::null_decl_list{};
+    return f;
 }
 
-void yyParser::func_decl_0() {
+ast::func_decl *yyParser::func_decl_0(const std::string &n) {
     switch (yylexsymb) {
-        case LEX_COLON:
+        case LEX_COLON: {
             yylexsymb = yylexer.yylex();
             match(LEX_INT);
             match(LEX_SEMICOLON);
-            func_decl_1();
-            break;
-        case LEX_LRBRAC:
-            formal_param_list();
+            auto b = func_decl_1();
+            return new ast::func_decl{n, std::list<std::string>{}, b};
+        }
+        case LEX_LRBRAC: {
+            auto f = formal_param_list();
             match(LEX_COLON);
             match(LEX_INT);
             match(LEX_SEMICOLON);
-            func_decl_1();
-            break;
+            auto b = func_decl_1();
+            return new ast::func_decl{n, f, b};
+        }
         default:
             std::cout << "func_decl_0 error" << std::endl;
+            return nullptr;
     }
 }
 
-void yyParser::func_decl_1() {
+ast::block *yyParser::func_decl_1() {
     switch (yylexsymb) {
         case LEX_FORW:
             yylexsymb = yylexer.yylex();
-            break;
+            return nullptr;
         case LEX_SEMICOLON:
         case LEX_CONST:
         case LEX_VAR:
         case LEX_PROC:
         case LEX_FUNC:
         case LEX_BEGIN:
-            block();
-            break;
+            return block();
         default:
             std::cout << "func_decl_1 error" << std::endl;
+            return nullptr;
     }
 }
 
-void yyParser::formal_param_list() {
+std::list<std::string> yyParser::formal_param_list() {
     match(LEX_LRBRAC);
-    formal_param_sec_list();
+    auto l = formal_param_sec_list();
     match(LEX_RRBRAC);
+    return l;
 }
 
-void yyParser::formal_param_sec_list() {
-    formal_param_sec();
-    formal_param_sec_list_0();
+std::list<std::string> yyParser::formal_param_sec_list() {
+    auto l = std::list<std::string>{};
+    formal_param_sec(l);
+    formal_param_sec_list_0(l);
+    return l;
 }
 
-void yyParser::formal_param_sec_list_0() {
+void yyParser::formal_param_sec_list_0(std::list<std::string> &l) {
     switch (yylexsymb) {
         case LEX_SEMICOLON:
             yylexsymb = yylexer.yylex();
-            formal_param_sec();
-            formal_param_sec_list_0();
-            break;
+            formal_param_sec(l);
+            formal_param_sec_list_0(l);
+            return;
         default:
-            break;
+            return;
     }
 }
 
-void yyParser::formal_param_sec() {
-    ident_list();
+void yyParser::formal_param_sec(std::list<std::string> &l) {
+    l.push_back(get_ident());
+    yylexsymb = yylexer.yylex();
     match(LEX_COLON);
     type();
 }
@@ -594,7 +602,7 @@ ast::expr *yyParser::primary() {
         case LEX_IDENT: {
             auto n = get_ident();
             yylexsymb = yylexer.yylex();
-            return primary_0(new ast::var_access{n});
+            return primary_0(n);
         }
         case LEX_NUMB:
             yylexsymb = yylexer.yylex();
@@ -614,13 +622,14 @@ ast::expr *yyParser::primary() {
     }
 }
 
-ast::expr *yyParser::primary_0(ast::var_access *v) {
+ast::expr *yyParser::primary_0(const std::string &n) {
     switch (yylexsymb) {
-        case LEX_LRBRAC: /* TODO */
+        case LEX_LRBRAC: {
             yylexsymb = yylexer.yylex();
-            actual_param_list();
+            auto l = actual_param_list();
             match(LEX_RRBRAC);
-            return new ast::null_expr{};
+            return new ast::call{n, l};
+        }
         case LEX_LBRAC:
         case LEX_EXP:
         case LEX_MUL:
@@ -646,7 +655,7 @@ ast::expr *yyParser::primary_0(ast::var_access *v) {
         case LEX_COMMA:
         case LEX_THEN:
         case LEX_ELSE:
-            return var_access(v);
+            return var_access(new ast::var_access{n});
         default:
             std::cout << "primary_0 error" << std::endl;
             return nullptr;
@@ -665,21 +674,21 @@ ast::expr *yyParser::var_access(ast::var_access *v) {
     }
 }
 
-/* TODO */
-void yyParser::actual_param_list() {
-    expr();
-    actual_param_list_0();
+std::list<ast::expr *> yyParser::actual_param_list() {
+    auto l = std::list<ast::expr *>{};
+    l.push_back(expr());
+    actual_param_list_0(l);
+    return l;
 }
 
-/* TODO */
-void yyParser::actual_param_list_0() {
+void yyParser::actual_param_list_0(std::list<ast::expr *> &l) {
     switch (yylexsymb) {
         case LEX_COMMA:
             yylexsymb = yylexer.yylex();
-            expr();
-            actual_param_list_0();
-            break;
+            l.push_back(expr());
+            actual_param_list_0(l);
+            return;
         default:
-            break;
+            return;
     }
 }

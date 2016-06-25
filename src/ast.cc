@@ -459,6 +459,32 @@ void null_expr::dump(int s) const {
 }
 
 /*
+ * call class
+ */
+call::call(const std::string &n, std::list<expr *> p)
+    : name{n}, params{std::move(p)} {}
+
+call::~call() {
+    for (auto e : params)
+        delete e;
+}
+
+llvm::Value *call::gen_ir() {
+    auto fun = module->getFunction(name);
+    auto p = std::vector<llvm::Value *>{};
+    for (auto e : params)
+        p.push_back(e->gen_ir());
+    return builder.CreateCall(fun, p, "call");
+}
+
+void call::dump(int s) const {
+    print_spaces(s);
+    std::cout << "call name: " << name << std::endl;
+    for (auto e : params)
+        e->dump(s + 4);
+}
+
+/*
  * var_access class
  */
 var_access::var_access(const std::string &n) : name{n} {}
@@ -599,7 +625,8 @@ void var_decl::add_type(std::shared_ptr<type> t) {
 }
 
 llvm::Value *var_decl::gen_ir() {
-    named_vals.count(name);
+    if (named_vals.count(name) != 0)
+        return nullptr;
     llvm::AllocaInst *a;
     if (var_type->get_type() == TYPE_INT)
         a = builder.CreateAlloca(llvm::Type::getInt64Ty(context),
@@ -668,7 +695,61 @@ proc_decl::proc_decl() {}
 /*
  * func_decl class
  */
-func_decl::func_decl() {}
+func_decl::func_decl(const std::string &n, std::list<std::string> a, block *b)
+    : name{n}, args{std::move(a)}, body{b} {}
+
+llvm::Value *func_decl::gen_ir() {
+    auto prev_bb = builder.GetInsertBlock();
+
+    auto arguments = std::vector<llvm::Type *>(args.size(), llvm::Type::getInt64Ty(context));
+    auto fun_type = llvm::FunctionType::get( llvm::Type::getInt64Ty(context), arguments, false);
+    auto fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage, name, module.get());
+
+    auto it = args.begin();
+    for (auto &arg : fun->args())
+        arg.setName(*(it++));
+
+    if (body != nullptr) {
+        auto backup_named = std::map<std::string, llvm::AllocaInst *>(named_vals);
+        auto backup_const = std::map<std::string, llvm::AllocaInst *>(const_vals);
+        named_vals.clear();
+        const_vals.clear();
+
+        auto bb = llvm::BasicBlock::Create(context, "entry", fun);
+        builder.SetInsertPoint(bb);
+
+        auto a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), nullptr, name.c_str());
+        named_vals[name] = a;
+        const_vals[name] = a;
+        for (auto &arg : fun->args()) {
+            a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), nullptr, arg.getName());
+            builder.CreateStore(&arg, a);
+            named_vals[arg.getName()] = a;
+            const_vals[arg.getName()] = a;
+        }
+
+        body->gen_ir();
+        auto ret_val = builder.CreateLoad(named_vals[name], name.c_str());
+        builder.CreateRet(ret_val);
+        verifyFunction(*fun);
+
+        named_vals = backup_named;
+        const_vals = backup_const;
+    }
+
+    builder.SetInsertPoint(prev_bb);
+
+    return fun;
+}
+
+void func_decl::dump(int s) const {
+    print_spaces(s);
+    std::cout << "func_decl name: " << name << " args:";
+    for (auto &a : args)
+        std::cout << " " << a;
+    std::cout << std::endl;
+    body->dump(s + 4);
+}
 
 /*
  * compound_stmt class
@@ -856,6 +937,12 @@ void for_stmt::dump(int s) const {
 /*
  * exit class
  */
+llvm::Value *exit_stmt::gen_ir() {
+    auto fun = builder.GetInsertBlock()->getParent()->getName();
+    auto ret = builder.CreateLoad(named_vals[fun], "exit");
+    return builder.CreateRet(ret);
+}
+
 void exit_stmt::dump(int s) const {
     print_spaces(s);
     std::cout << "exit_stmt" << std::endl;

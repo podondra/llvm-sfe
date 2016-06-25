@@ -35,13 +35,13 @@ class yyParser {
         ast::decl_list *proc_decl();
         void proc_decl_0();
         void proc_decl_1();
-        ast::decl_list *func_decl();
-        void func_decl_0();
-        void func_decl_1();
-        void formal_param_list();
-        void formal_param_sec_list();
-        void formal_param_sec_list_0();
-        void formal_param_sec();
+        ast::decl *func_decl();
+        ast::func_decl *func_decl_0(const std::string &);
+        ast::block *func_decl_1();
+        std::list<std::string> formal_param_list();
+        std::list<std::string> formal_param_sec_list();
+        void formal_param_sec_list_0(std::list<std::string> &l);
+        void formal_param_sec(std::list<std::string> &l);
         ast::compound_stmt *comp_stmt();
         ast::stmt_list *stmt_seq();
         ast::stmt_list *stmt_seq_0();
@@ -63,10 +63,10 @@ class yyParser {
         ast::expr *exp();
         ast::expr *exp_0(ast::expr *);
         ast::expr *primary();
-        ast::expr *primary_0(ast::var_access *);
+        ast::expr *primary_0(const std::string &);
         ast::expr *var_access(ast::var_access *);
-        void actual_param_list();
-        void actual_param_list_0();
+        std::list<ast::expr *> actual_param_list();
+        void actual_param_list_0(std::list<ast::expr *> &);
 };
 
 #endif /* parser_h_msj16e76apo2jy7i */

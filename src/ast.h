@@ -164,8 +164,13 @@ class proc_decl : public decl {
 };
 
 class func_decl : public decl {
+    std::string name;
+    std::list<std::string> args;
+    block *body;
     public:
-        func_decl();
+        func_decl(const std::string &, std::list<std::string>, block *);
+        llvm::Value *gen_ir();
+        virtual void dump(int) const;
 };
 
 /* expressions */
@@ -296,9 +301,19 @@ class not_expr : public unary_expr {
         virtual void dump(int) const;
 };
 
+
+/*
+ * call class
+ */
 class call : public expr {
     protected:
         const std::string name;
+        std::list<expr *> params;
+    public:
+        call(const std::string &, std::list<expr *>);
+        ~call();
+        virtual llvm::Value *gen_ir();
+        virtual void dump(int) const;
 };
 
 class var_access : public expr {
@@ -401,6 +416,7 @@ class for_stmt : public stmt {
 
 class exit_stmt : public stmt {
     public:
+        llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
