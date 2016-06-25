@@ -16,6 +16,7 @@ OCTAL       "&"[0-7]+
 "array"     return LEX_ARRAY;
 "begin"     return LEX_BEGIN;
 "const"     return LEX_CONST;
+"dec"       return LEX_DEC;
 "do"        return LEX_DO;
 "downto"    return LEX_DOWNTO;
 "else"      return LEX_ELSE;
@@ -24,6 +25,7 @@ OCTAL       "&"[0-7]+
 "for"       return LEX_FOR;
 "forward"   return LEX_FORW;
 "function"  return LEX_FUNC;
+"inc"       return LEX_INC;
 "if"        return LEX_IF;
 "integer"   return LEX_INT;
 "of"        return LEX_OF;

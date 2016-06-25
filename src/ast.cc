@@ -857,6 +857,59 @@ void exit_stmt::dump(int s) const {
 }
 
 /*
+ * dec_stmt class
+ */
+dec_stmt::dec_stmt(var_assign *v) : var{v} {}
+
+dec_stmt::~dec_stmt() {
+    delete var;
+}
+
+
+llvm::Value *dec_stmt::gen_ir() {
+    auto v = var->gen_ir();
+    if (v == nullptr)
+        return nullptr;
+    auto c = builder.CreateLoad(v, "dec");
+    auto n = builder.CreateAdd(c, llvm::ConstantInt::getSigned(
+                llvm::IntegerType::getInt64Ty(context), -1), "dec");
+    return builder.CreateStore(n, v);
+}
+
+void dec_stmt::dump(int s) const {
+    print_spaces(s);
+    std::cout << "dec_stmt" << std::endl;
+    var->dump(s + 4);
+}
+
+/*
+ * inc_stmt class
+ */
+inc_stmt::inc_stmt(var_assign *v) : var{v} {}
+
+inc_stmt::~inc_stmt() {
+    delete var;
+}
+
+
+llvm::Value *inc_stmt::gen_ir() {
+    auto v = var->gen_ir();
+    if (v == nullptr)
+        return nullptr;
+    auto c = builder.CreateLoad(v, "inc");
+    auto n = builder.CreateAdd(c, llvm::ConstantInt::getSigned(
+                llvm::IntegerType::getInt64Ty(context), 1), "inc");
+    
+    return builder.CreateStore(n, v);
+}
+
+void inc_stmt::dump(int s) const {
+    print_spaces(s);
+    std::cout << "dec_stmt" << std::endl;
+    var->dump(s + 4);
+}
+
+/*
  * readln_stmt class
  */
 readln_stmt::readln_stmt(var_assign *v) : var{v} {}
@@ -976,7 +1029,6 @@ int main(int argc, char **argv) {
 
     /* create AST */
     auto root = parser.yyparse();
-    root->dump(0);
 
     /* init objects */
     llvm::InitializeNativeTarget();

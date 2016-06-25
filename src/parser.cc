@@ -343,6 +343,26 @@ ast::stmt *yyParser::stmt() {
         case LEX_EXIT:
             yylexsymb = yylexer.yylex();
             return new ast::exit_stmt{};
+        case LEX_INC: {
+            yylexsymb = yylexer.yylex();
+            match(LEX_LRBRAC);
+            auto n = get_ident();
+            match(LEX_IDENT);
+            auto v = new ast::var_assign{n};
+            var_assign(v);
+            match(LEX_RRBRAC);
+            return new ast::inc_stmt{v};
+        }
+        case LEX_DEC: {
+            yylexsymb = yylexer.yylex();
+            match(LEX_LRBRAC);
+            auto n = get_ident();
+            match(LEX_IDENT);
+            auto v = new ast::var_assign{n};
+            var_assign(v);
+            match(LEX_RRBRAC);
+            return new ast::dec_stmt{v};
+        }
         case LEX_READLN: {
             yylexsymb = yylexer.yylex();
             match(LEX_LRBRAC);

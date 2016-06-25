@@ -395,6 +395,26 @@ class exit_stmt : public stmt {
         virtual void dump(int) const;
 };
 
+class dec_stmt : public stmt {
+    protected:
+        var_assign *var;
+    public:
+        dec_stmt(var_assign *);
+        virtual ~dec_stmt();
+        llvm::Value *gen_ir();
+        virtual void dump(int) const;
+};
+
+class inc_stmt : public stmt {
+    protected:
+        var_assign *var;
+    public:
+        inc_stmt(var_assign *);
+        virtual ~inc_stmt();
+        llvm::Value *gen_ir();
+        virtual void dump(int) const;
+};
+
 class readln_stmt : public stmt {
     protected:
         var_assign *var;
