@@ -1285,7 +1285,6 @@ int main(int argc, char **argv) {
 
     /* create AST */
     auto root = parser.yyparse();
-    root->dump(0);
 
     /* init objects */
     llvm::InitializeNativeTarget();
@@ -1313,14 +1312,13 @@ int main(int argc, char **argv) {
                 llvm::IntegerType::getInt8Ty(context), 0));
     verifyFunction(*fun);
 
-    module->dump(); /* print generated llvm ir */
+    /* module->dump(); */ /* print generated llvm ir */
 
     auto h = jit->addModule(std::move(module));
 
     auto symbol = jit->findSymbol("main");
     assert(symbol && "func not found");
     int (*fun_ptr)() = (int (*)())(intptr_t)symbol.getAddress();
-    std::cout << "evaluation:" << std::endl;
     fun_ptr();
 
     jit->removeModule(h);

@@ -441,12 +441,12 @@ void yyParser::var_assign(ast::var_assign *v) {
             v->add_idx(expr());
             match(LEX_RBRAC);
             var_assign(v);
-            break;
+            return;
         case LEX_ASSIGN:
             yylexsymb = yylexer.yylex();
-            break;
+            return;
         default:
-            std::cout << "var_assign error" << std::endl;
+            return;
     }
 }
 
