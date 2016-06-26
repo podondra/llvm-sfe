@@ -79,6 +79,7 @@ stmt ::= 'ident' <assign_or_proc_stmt>
      | 'readln' '(' 'ident' <var_access> ')'
      | 'writeln' '(' <expr> ')'
      | 'write' '(' <expr> ')'
+     | 'break'
      | ''
 
 assign_or_proc_stmt ::= <var_assign> <expr>
