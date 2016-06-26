@@ -191,45 +191,49 @@ std::shared_ptr<ast::type> yyParser::type() {
     }
 }
 
-ast::decl_list *yyParser::proc_decl() {
+ast::decl *yyParser::proc_decl() {
     match(LEX_PROC);
+    auto n = get_ident();
     match(LEX_IDENT);
-    proc_decl_0();
+    auto p = proc_decl_0(n);
     match(LEX_SEMICOLON);
-    return new ast::null_decl_list{};
+    return p;
 }
 
-void yyParser::proc_decl_0() {
+ast::proc_decl *yyParser::proc_decl_0(const std:: string &n) {
     switch (yylexsymb) {
-        case LEX_SEMICOLON:
+        case LEX_SEMICOLON: {
             yylexsymb = yylexer.yylex();
-            proc_decl_1();
-            break;
-        case LEX_LRBRAC:
-            formal_param_list();
+            auto b = proc_decl_1();
+            return new ast::proc_decl{n, std::list<std::string>{}, b};
+        }
+        case LEX_LRBRAC: {
+            auto f = formal_param_list();
             match(LEX_SEMICOLON);
-            proc_decl_1();
-            break;
+            auto b = proc_decl_1();
+            return new ast::proc_decl{n, f, b};
+        }
         default:
             std::cout << "proc_decl_0 error" << std::endl;
+            return nullptr;
     }
 }
 
-void yyParser::proc_decl_1() {
+ast::block *yyParser::proc_decl_1() {
     switch (yylexsymb) {
         case LEX_FORW:
             yylexsymb = yylexer.yylex();
-            break;
+            return nullptr;
         case LEX_SEMICOLON:
         case LEX_CONST:
         case LEX_VAR:
         case LEX_PROC:
         case LEX_FUNC:
         case LEX_BEGIN:
-            block();
-            break;
+            return block();
         default:
             std::cout << "proc_decl_1 error" << std::endl;
+            return nullptr;
     }
 }
 
@@ -415,11 +419,12 @@ ast::stmt *yyParser::assign_or_proc_stmt(const std::string& n) {
             var_assign(v);
             return new ast::assign_stmt{v, expr()};
         }
-        case LEX_LRBRAC: /* TODO */
+        case LEX_LRBRAC: {
             yylexsymb = yylexer.yylex();
-            actual_param_list();
+            auto l = actual_param_list();
             match(LEX_RRBRAC);
-            return new ast::null_stmt{};
+            return new ast::proc_call{n, l};
+        }
         default:
             return new ast::null_stmt{};
     }

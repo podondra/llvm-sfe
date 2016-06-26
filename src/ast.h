@@ -60,8 +60,6 @@ class array_type : public type {
 class decl : public node {
     public:
         virtual void add_type(std::shared_ptr<type>);
-        /* TODO */
-        virtual llvm::Value *gen_ir() { return nullptr; }
         virtual ~decl();
 };
 
@@ -131,8 +129,6 @@ class block : public node {
 /* base expr class */
 class expr : public node {
     public:
-        /* TODO */
-        virtual llvm::Value *gen_ir() { return nullptr; }
         virtual ~expr();
 };
 
@@ -159,14 +155,21 @@ class var_decl : public decl {
 };
 
 class proc_decl : public decl {
+    protected:
+        std::string name;
+        std::list<std::string> args;
+        block *body;
     public:
-        proc_decl();
+        proc_decl(const std::string &, std::list<std::string>, block *);
+        llvm::Value *gen_ir();
+        virtual void dump(int) const;
 };
 
 class func_decl : public decl {
-    std::string name;
-    std::list<std::string> args;
-    block *body;
+    protected:
+        std::string name;
+        std::list<std::string> args;
+        block *body;
     public:
         func_decl(const std::string &, std::list<std::string>, block *);
         llvm::Value *gen_ir();
@@ -298,9 +301,23 @@ class minus_expr : public unary_expr {
 class not_expr : public unary_expr {
     public:
         not_expr(expr *);
+        virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
 
+/*
+ * proc_call class
+ */
+class proc_call : public stmt {
+    protected:
+        const std::string name;
+        std::list<expr *> params;
+    public:
+        proc_call(const std::string &, std::list<expr *>);
+        ~proc_call();
+        virtual llvm::Value *gen_ir();
+        virtual void dump(int) const;
+};
 
 /*
  * call class
@@ -374,9 +391,6 @@ class assign_stmt : public stmt {
         llvm::Value *gen_ir();
         virtual ~assign_stmt();
         virtual void dump(int) const;
-};
-
-class proc_call_stmt : public stmt {
 };
 
 class if_stmt : public stmt {

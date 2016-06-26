@@ -447,15 +447,49 @@ llvm::Value *minus_expr::gen_ir() {
  */
 not_expr::not_expr(expr *c) : unary_expr{c} {}
 
+llvm::Value *not_expr::gen_ir() {
+    auto c = child->gen_ir();
+    if (c == nullptr)
+        return nullptr;
+    return builder.CreateNot(c, "not");
+}
+
 void not_expr::dump(int s) const {
     print_spaces(s);
     std::cout << "not_expr" << std::endl;
     child->dump(s + 4);
 }
 
+/*
+ * null_expr
+ */
 void null_expr::dump(int s) const {
     print_spaces(s);
     std::cout << "null_expr" << std::endl;
+}
+
+/*
+ * proc_call class
+ */
+proc_call::proc_call(const std::string &n, std::list<expr *> p)
+    : name{n}, params{std::move(p)} {}
+
+proc_call::~proc_call() {
+    for (auto e : params)
+        delete e; } 
+llvm::Value *proc_call::gen_ir() {
+    auto fun = module->getFunction(name);
+    auto p = std::vector<llvm::Value *>{};
+    for (auto e : params)
+        p.push_back(e->gen_ir());
+    return builder.CreateCall(fun, p);
+}
+
+void proc_call::dump(int s) const {
+    print_spaces(s);
+    std::cout << "proc_call name: " << name << std::endl;
+    for (auto e : params)
+        e->dump(s + 4);
 }
 
 /*
@@ -690,7 +724,67 @@ void array_type::dump(int s) const {
 /*
  * proc_decl class
  */
-proc_decl::proc_decl() {}
+proc_decl::proc_decl(const std::string &n, std::list<std::string> a, block *b)
+    : name{n}, args{std::move(a)}, body{b} {}
+
+llvm::Value *proc_decl::gen_ir() {
+    auto prev_bb = builder.GetInsertBlock();
+
+    auto fun = module->getFunction(name);
+    if (fun == nullptr) {
+        auto arguments = std::vector<llvm::Type *>(args.size(), llvm::Type::getInt64Ty(context));
+        auto fun_type = llvm::FunctionType::get(llvm::Type::getVoidTy(context), arguments, false);
+        fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage, name, module.get());
+        auto it = args.begin();
+        for (auto &arg : fun->args())
+            arg.setName(*(it++));
+    }
+
+    if (body != nullptr) {
+        auto backup_named = std::map<std::string, llvm::AllocaInst *>(named_vals);
+        auto backup_const = std::map<std::string, llvm::AllocaInst *>(const_vals);
+        named_vals.clear();
+        const_vals.clear();
+
+        auto bb = llvm::BasicBlock::Create(context, "entry", fun);
+        builder.SetInsertPoint(bb);
+
+        auto a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), nullptr, name.c_str());
+        named_vals[name] = a;
+        const_vals[name] = a;
+        for (auto &arg : fun->args()) {
+            a = builder.CreateAlloca(llvm::Type::getInt64Ty(context), nullptr, arg.getName());
+            builder.CreateStore(&arg, a);
+            named_vals[arg.getName()] = a;
+            const_vals[arg.getName()] = a;
+        }
+
+        body->gen_ir();
+        builder.CreateRetVoid();
+        verifyFunction(*fun);
+
+        named_vals = backup_named;
+        const_vals = backup_const;
+    }
+
+    builder.SetInsertPoint(prev_bb);
+
+    return fun;
+}
+
+void proc_decl::dump(int s) const {
+    print_spaces(s);
+    std::cout << "proc_decl name: " << name << " args:";
+    for (auto &a : args)
+        std::cout << " " << a;
+    std::cout << std::endl;
+    if (body != nullptr) {
+        body->dump(s + 4);
+    } else {
+        print_spaces(s + 4);
+        std::cout << "forward" << std::endl;
+    }
+}
 
 /*
  * func_decl class
@@ -1089,8 +1183,6 @@ void null_stmt::dump(int s) const {
 
 /*
  * main fun
- *
- * TODO: add JIT
  */
 void define_base_func() {
     scanln_fun = llvm::Function::Create(
