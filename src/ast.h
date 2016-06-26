@@ -36,6 +36,7 @@ class type : public node {
         virtual ~type();
         virtual int get_type() const = 0;
         virtual int get_size() const = 0;
+        virtual int get_from() const = 0;
         virtual llvm::Value *gen_ir();
 };
 
@@ -43,6 +44,7 @@ class int_type : public type {
     public:
         virtual int get_type() const;
         virtual int get_size() const;
+        virtual int get_from() const;
         virtual void dump(int) const;
 };
 
@@ -53,6 +55,7 @@ class array_type : public type {
         array_type(int, int);
         virtual int get_type() const;
         virtual int get_size() const;
+        virtual int get_from() const;
         virtual void dump(int) const;
 };
 
@@ -353,6 +356,7 @@ class var_assign : public node {
         var_assign(const std::string &);
         ~var_assign();
         void add_idx(expr *);
+        std::string get_name() const;
         llvm::Value *get_idx() const;
         virtual llvm::Value *gen_ir();
         virtual void dump(int) const;

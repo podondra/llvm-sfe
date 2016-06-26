@@ -25,6 +25,7 @@ static llvm::IRBuilder<> builder{context};
 static std::unique_ptr<llvm::Module> module;
 static std::map<std::string, llvm::AllocaInst *> named_vals;
 static std::map<std::string, llvm::AllocaInst *> const_vals;
+static std::map<std::string, long int> arr_starts;
 static std::unique_ptr<llvm::orc::KaleidoscopeJIT> jit;
 
 llvm::Function *scanln_fun;
@@ -535,10 +536,11 @@ void var_access::add_idx(expr *e) {
 llvm::Value *var_access::gen_ir() {
     auto var = const_vals[name];
     if (!idxs.empty()) {
+        auto pos = builder.CreateAdd(idxs.front()->gen_ir(), llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), arr_starts[name]));
         auto index = builder.CreateInBoundsGEP(
                 var,
                 { llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), 0),
-                  idxs.front()->gen_ir() }
+                  pos }
                 );
         return builder.CreateLoad(index);
     }
@@ -560,6 +562,10 @@ var_assign::var_assign(const std::string &n) : name{n} {}
 var_assign::~var_assign() {
     for (auto e : idxs)
         delete e;
+}
+
+std::string var_assign::get_name() const {
+    return name;
 }
 
 void var_assign::add_idx(expr *e) {
@@ -675,14 +681,16 @@ void var_decl::add_type(std::shared_ptr<type> t) {
 llvm::Value *var_decl::gen_ir() {
     if (named_vals.count(name) != 0)
         return nullptr;
-    llvm::AllocaInst *a;
-    if (var_type->get_type() == TYPE_INT)
+    llvm::AllocaInst *a = nullptr;
+    if (var_type->get_type() == TYPE_INT) {
         a = builder.CreateAlloca(llvm::Type::getInt64Ty(context),
                 nullptr, name.c_str());
-    else if (var_type->get_type() == TYPE_ARR)
+    } else if (var_type->get_type() == TYPE_ARR) {
         a = builder.CreateAlloca(llvm::ArrayType::get(
                     llvm::Type::getInt64Ty(context), var_type->get_size()
                     ), nullptr, name.c_str());
+        arr_starts[name] = -var_type->get_from();
+    }
     named_vals[name] = a;
     const_vals[name] = a;
     return a;
@@ -712,6 +720,10 @@ int int_type::get_size() const {
     return 0;
 }
 
+int int_type::get_from() const {
+    return 0;
+}
+
 void int_type::dump(int s) const {
     print_spaces(s);
     std::cout << "int_type" << std::endl;
@@ -727,7 +739,11 @@ int array_type::get_type() const {
 }
 
 int array_type::get_size() const {
-    return to + 1;
+    return to - from + 1;
+}
+
+int array_type::get_from() const {
+    return from;
 }
 
 void array_type::dump(int s) const {
@@ -757,8 +773,10 @@ llvm::Value *proc_decl::gen_ir() {
     if (body != nullptr) {
         auto backup_named = std::map<std::string, llvm::AllocaInst *>(named_vals);
         auto backup_const = std::map<std::string, llvm::AllocaInst *>(const_vals);
+        auto backup_arr = std::map<std::string, long int>(arr_starts);
         named_vals.clear();
         const_vals.clear();
+        arr_starts.clear();
 
         auto bb = llvm::BasicBlock::Create(context, "entry", fun);
         builder.SetInsertPoint(bb);
@@ -779,6 +797,7 @@ llvm::Value *proc_decl::gen_ir() {
 
         named_vals = backup_named;
         const_vals = backup_const;
+        arr_starts = backup_arr;
     }
 
     builder.SetInsertPoint(prev_bb);
@@ -822,8 +841,10 @@ llvm::Value *func_decl::gen_ir() {
     if (body != nullptr) {
         auto backup_named = std::map<std::string, llvm::AllocaInst *>(named_vals);
         auto backup_const = std::map<std::string, llvm::AllocaInst *>(const_vals);
+        auto backup_arr = std::map<std::string, long int>(arr_starts);
         named_vals.clear();
         const_vals.clear();
+        arr_starts.clear();
 
         auto bb = llvm::BasicBlock::Create(context, "entry", fun);
         builder.SetInsertPoint(bb);
@@ -845,6 +866,7 @@ llvm::Value *func_decl::gen_ir() {
 
         named_vals = backup_named;
         const_vals = backup_const;
+        arr_starts = backup_arr;
     }
 
     builder.SetInsertPoint(prev_bb);
@@ -902,8 +924,9 @@ llvm::Value *assign_stmt::gen_ir() {
     if (index == nullptr) {
         builder.CreateStore(e, variable);
     } else {
+        auto pos = builder.CreateAdd(index, llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), arr_starts[var->get_name()]));
         auto position = builder.CreateInBoundsGEP(variable,
-                {llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), 0), index});
+                {llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), 0), pos});
         builder.CreateStore(e, position);
     }
     return e;
@@ -1010,8 +1033,10 @@ for_stmt::~for_stmt() {
 }
 
 llvm::Value *for_stmt::gen_ir() {
+    /* get current function */
     auto fun = builder.GetInsertBlock()->getParent();
 
+    /* look up index variable and store from expression */
     auto v = named_vals[name];
     auto f = from->gen_ir();
     builder.CreateStore(f, v);
