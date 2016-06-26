@@ -73,6 +73,8 @@ stmt ::= 'ident' <assign_or_proc_stmt>
      | <if_stmt>
      | <while_stmt>
      | <for_stmt>
+     | 'inc' '(' 'ident' <var_access> ')'
+     | 'dec' '(' 'ident' <var_access> ')'
      | 'exit'
      | 'readln' '(' 'ident' <var_access> ')'
      | 'writeln' '(' <expr> ')'
