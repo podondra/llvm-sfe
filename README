@@ -20,9 +20,11 @@ k dispozici prilinkovanim v prostredi semestralni ulohy. Nacitejte
 a vypisujte vzdy jedno cislo.
 
 Kompilace:
+Je treba stahnout a rozbalit LLVM 3.8.0:
+http://llvm.org/releases/download.html#3.8.0
 $ mkdir llvm-obj
 $ cd llvm-obj
-$ cmake ../llvm-3.8.0.src
+$ cmake path/to/llvm/source
 $ cmake --build .
 $ cd ../llvm-sfe/src
 $ make
