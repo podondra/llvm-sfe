@@ -6,6 +6,7 @@ extern long int yynumbval;
 enum lexsymb {
     LEX_ARRAY,
     LEX_BEGIN,
+    LEX_BRK,
     LEX_CONST,
     LEX_DEC,
     LEX_DO,

@@ -27,6 +27,7 @@ static std::map<std::string, llvm::AllocaInst *> named_vals;
 static std::map<std::string, llvm::AllocaInst *> const_vals;
 static std::map<std::string, long int> arr_starts;
 static std::unique_ptr<llvm::orc::KaleidoscopeJIT> jit;
+static llvm::BasicBlock *break_bb;
 
 llvm::Function *scanln_fun;
 llvm::Function *println_fun;
@@ -998,6 +999,8 @@ llvm::Value *while_stmt::gen_ir() {
     auto cond = llvm::BasicBlock::Create(context, "cond", fun);
     auto loop = llvm::BasicBlock::Create(context, "loop", fun);
     auto after = llvm::BasicBlock::Create(context, "after");
+    auto backup_break = break_bb;
+    break_bb = after;
 
     builder.CreateBr(cond);
     builder.SetInsertPoint(cond);
@@ -1010,6 +1013,8 @@ llvm::Value *while_stmt::gen_ir() {
 
     fun->getBasicBlockList().push_back(after);
     builder.SetInsertPoint(after);
+
+    break_bb = backup_break;
 
     return after;
 }
@@ -1044,6 +1049,8 @@ llvm::Value *for_stmt::gen_ir() {
     auto cond = llvm::BasicBlock::Create(context, "cond", fun);
     auto loop = llvm::BasicBlock::Create(context, "loop", fun);
     auto after = llvm::BasicBlock::Create(context, "after");
+    auto backup_break = break_bb;
+    break_bb = after;
     builder.CreateBr(cond);
 
     builder.SetInsertPoint(cond);
@@ -1069,6 +1076,8 @@ llvm::Value *for_stmt::gen_ir() {
 
     fun->getBasicBlockList().push_back(after);
     builder.SetInsertPoint(after);
+
+    break_bb = backup_break;
 
     return after;
 }
@@ -1217,6 +1226,24 @@ void writeln_stmt::dump(int s) const {
     print_spaces(s);
     std::cout << "writeln_stmt" << std::endl;
     expression->dump(s + 4);
+}
+
+/*
+ * break_stmt class
+ */
+break_stmt::break_stmt() {}
+
+llvm::Value *break_stmt::gen_ir() {
+    if (break_bb == nullptr) {
+        std::cout << "break_stmt error" << std::endl;
+        return nullptr;
+    }
+    return builder.CreateBr(break_bb);
+}
+
+void break_stmt::dump(int s) const {
+    print_spaces(s);
+    std::cout << "break_stmt" << std::endl;
 }
 
 /*

@@ -400,6 +400,10 @@ ast::stmt *yyParser::stmt() {
             match(LEX_RRBRAC);
             return new ast::write_stmt{e};
         }
+        case LEX_BRK: {
+            yylexsymb = yylexer.yylex();
+            return new ast::break_stmt{};
+        }
         case LEX_WHILE:
             return while_stmt();
         case LEX_FOR:

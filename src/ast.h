@@ -489,6 +489,13 @@ class writeln_stmt : public stmt {
         virtual void dump(int) const;
 };
 
+class break_stmt : public stmt {
+    public:
+        break_stmt();
+        virtual llvm::Value *gen_ir();
+        virtual void dump(int) const;
+};
+
 class null_stmt : public stmt {
     public:
         virtual void dump(int) const;

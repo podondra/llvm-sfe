@@ -15,6 +15,7 @@ OCTAL       "&"[0-7]+
 
 "array"     return LEX_ARRAY;
 "begin"     return LEX_BEGIN;
+"break"     return LEX_BRK;
 "const"     return LEX_CONST;
 "dec"       return LEX_DEC;
 "do"        return LEX_DO;
