@@ -533,8 +533,16 @@ void var_access::add_idx(expr *e) {
 }
 
 llvm::Value *var_access::gen_ir() {
-    llvm::Value *v = const_vals[name];
-    return builder.CreateLoad(v, name.c_str());
+    auto var = const_vals[name];
+    if (!idxs.empty()) {
+        auto index = builder.CreateInBoundsGEP(
+                var,
+                { llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), 0),
+                  idxs.front()->gen_ir() }
+                );
+        return builder.CreateLoad(index);
+    }
+    return builder.CreateLoad(var, name.c_str());
 }
 
 void var_access::dump(int s) const {
@@ -556,6 +564,12 @@ var_assign::~var_assign() {
 
 void var_assign::add_idx(expr *e) {
     idxs.push_back(e);
+}
+
+llvm::Value *var_assign::get_idx() const {
+    if (idxs.empty())
+        return nullptr; 
+    return idxs.front()->gen_ir();
 }
 
 llvm::Value *var_assign::gen_ir() {
@@ -882,9 +896,16 @@ assign_stmt::~assign_stmt() {
 }
 
 llvm::Value *assign_stmt::gen_ir() {
-    auto v = var->gen_ir();
+    auto variable = var->gen_ir();
     auto e = expression->gen_ir();
-    builder.CreateStore(e, v);
+    auto index = var->get_idx();
+    if (index == nullptr) {
+        builder.CreateStore(e, variable);
+    } else {
+        auto position = builder.CreateInBoundsGEP(variable,
+                {llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(context), 0), index});
+        builder.CreateStore(e, position);
+    }
     return e;
 }
 

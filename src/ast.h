@@ -353,6 +353,7 @@ class var_assign : public node {
         var_assign(const std::string &);
         ~var_assign();
         void add_idx(expr *);
+        llvm::Value *get_idx() const;
         virtual llvm::Value *gen_ir();
         virtual void dump(int) const;
 };
