@@ -701,13 +701,15 @@ func_decl::func_decl(const std::string &n, std::list<std::string> a, block *b)
 llvm::Value *func_decl::gen_ir() {
     auto prev_bb = builder.GetInsertBlock();
 
-    auto arguments = std::vector<llvm::Type *>(args.size(), llvm::Type::getInt64Ty(context));
-    auto fun_type = llvm::FunctionType::get( llvm::Type::getInt64Ty(context), arguments, false);
-    auto fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage, name, module.get());
-
-    auto it = args.begin();
-    for (auto &arg : fun->args())
-        arg.setName(*(it++));
+    auto fun = module->getFunction(name);
+    if (fun == nullptr) {
+        auto arguments = std::vector<llvm::Type *>(args.size(), llvm::Type::getInt64Ty(context));
+        auto fun_type = llvm::FunctionType::get( llvm::Type::getInt64Ty(context), arguments, false);
+        fun = llvm::Function::Create(fun_type, llvm::Function::ExternalLinkage, name, module.get());
+        auto it = args.begin();
+        for (auto &arg : fun->args())
+            arg.setName(*(it++));
+    }
 
     if (body != nullptr) {
         auto backup_named = std::map<std::string, llvm::AllocaInst *>(named_vals);
@@ -748,7 +750,12 @@ void func_decl::dump(int s) const {
     for (auto &a : args)
         std::cout << " " << a;
     std::cout << std::endl;
-    body->dump(s + 4);
+    if (body != nullptr) {
+        body->dump(s + 4);
+    } else {
+        print_spaces(s + 4);
+        std::cout << "forward" << std::endl;
+    }
 }
 
 /*
