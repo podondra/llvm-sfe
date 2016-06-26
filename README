@@ -1,6 +1,8 @@
 Semestralni prace BI-PJP
 Frontend pro LLVM 3.8.0 Compiler Infrastructure
 
+Git repo: https://bitbucket.org/podondra/llvm-sfe
+
 Zadani:
     Rozsirte skupinu prekladacu gcc/llvm o novy jednoduchy frontend
 zpracovavajici vstupni jazyk inspirovany jazykem Pascal. Vystupem
