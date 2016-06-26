@@ -33,5 +33,6 @@ Popis adresaru:
 llvm-3.8.0.src/       zdrojove kody LLVM Compiler Infrastructure
 llvm-sfe/src/         zdrojove kody frontendu
 llvm-sfe/code-samples ukazkove zdrojove kody zjednoduseneho Pascalu
+llvm-sfe/my-samples   moje ukazkove zdrojove kody
 llvm-sfe/docs         ll(1) gramatika jazyka
 llvm-sfe/include      prevzaty kod pro pouziti JIT kompilatoru
